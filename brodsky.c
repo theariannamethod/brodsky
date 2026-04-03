@@ -61,6 +61,16 @@
 #define MAX_CYCLE_HAIKU 7
 #define EXHALE_COUNT    12
 
+/* ─── CORPUS METAWEIGHTS ───────────────────────────────────────────── */
+
+#define CORPUS_BIGRAM_MAX   4096
+#define CORPUS_HEBBIAN_MAX  8192
+#define CORPUS_LINE_MAX     256
+#define CORPUS_HEBBIAN_WIN  5       /* co-occurrence window */
+#define CORPUS_BG_WEIGHT    2.0f    /* corpus bigram boost in score */
+#define CORPUS_HB_WEIGHT    1.5f    /* corpus hebbian boost in score */
+#define CORPUS_ONLINE_DECAY 0.3f    /* online learning weight vs 1.0 for corpus */
+
 /* ─── EMOTIONS ──────────────────────────────────────────────────────── */
 
 enum {
@@ -582,6 +592,215 @@ static float hebbian_score(int a, int b) {
     return 0.0f;
 }
 
+/* ─── CORPUS BIGRAM TABLE (word-level, from exhale corpus) ─────────── */
+
+typedef struct {
+    int   src[CORPUS_BIGRAM_MAX];
+    int   dst[CORPUS_BIGRAM_MAX];
+    float weight[CORPUS_BIGRAM_MAX];
+    int   count;
+} CorpusBigrams;
+
+static CorpusBigrams corpus_bg;
+
+static void corpus_bg_init(void) {
+    memset(&corpus_bg, 0, sizeof(corpus_bg));
+}
+
+static void corpus_bg_add(int src_id, int dst_id, float w) {
+    /* find existing */
+    for (int i = 0; i < corpus_bg.count; i++) {
+        if (corpus_bg.src[i] == src_id && corpus_bg.dst[i] == dst_id) {
+            corpus_bg.weight[i] += w;
+            return;
+        }
+    }
+    /* add new */
+    if (corpus_bg.count < CORPUS_BIGRAM_MAX) {
+        corpus_bg.src[corpus_bg.count] = src_id;
+        corpus_bg.dst[corpus_bg.count] = dst_id;
+        corpus_bg.weight[corpus_bg.count] = w;
+        corpus_bg.count++;
+    }
+}
+
+static float corpus_bigram_score(int last_word, int cand_idx) {
+    if (last_word < 0) return 0.0f;
+    for (int i = 0; i < corpus_bg.count; i++) {
+        if (corpus_bg.src[i] == last_word && corpus_bg.dst[i] == cand_idx)
+            return corpus_bg.weight[i];
+    }
+    return 0.0f;
+}
+
+/* ─── CORPUS HEBBIAN TABLE (co-occurrence within window) ───────────── */
+
+typedef struct {
+    int   word_a[CORPUS_HEBBIAN_MAX];
+    int   word_b[CORPUS_HEBBIAN_MAX];
+    float weight[CORPUS_HEBBIAN_MAX];
+    int   count;
+} CorpusHebbian;
+
+static CorpusHebbian corpus_hb;
+
+static void corpus_hb_init(void) {
+    memset(&corpus_hb, 0, sizeof(corpus_hb));
+}
+
+static void corpus_hb_add(int a, int b, float w) {
+    if (a == b) return;
+    /* canonical order: a < b */
+    if (a > b) { int t = a; a = b; b = t; }
+    /* find existing */
+    for (int i = 0; i < corpus_hb.count; i++) {
+        if (corpus_hb.word_a[i] == a && corpus_hb.word_b[i] == b) {
+            corpus_hb.weight[i] += w;
+            return;
+        }
+    }
+    /* add new */
+    if (corpus_hb.count < CORPUS_HEBBIAN_MAX) {
+        corpus_hb.word_a[corpus_hb.count] = a;
+        corpus_hb.word_b[corpus_hb.count] = b;
+        corpus_hb.weight[corpus_hb.count] = w;
+        corpus_hb.count++;
+    }
+}
+
+static float corpus_hebbian_score(int last_word, int cand_idx) {
+    if (last_word < 0) return 0.0f;
+    int a = last_word, b = cand_idx;
+    if (a > b) { int t = a; a = b; b = t; }
+    for (int i = 0; i < corpus_hb.count; i++) {
+        if (corpus_hb.word_a[i] == a && corpus_hb.word_b[i] == b)
+            return corpus_hb.weight[i];
+    }
+    return 0.0f;
+}
+
+/* ─── CORPUS LOADING — parse exhale corpus into bigram & hebbian ───── */
+
+static int corpus_total_lines = 0;
+
+/* Find vocab index by text (case-insensitive for Latin, exact for UTF-8) */
+static int find_vocab_word(const char *word) {
+    for (int i = 0; i < vocab_size; i++) {
+        /* try exact match first */
+        if (strcmp(vocab[i].text, word) == 0) return i;
+    }
+    /* case-insensitive match for ASCII words */
+    for (int i = 0; i < vocab_size; i++) {
+        const char *a = vocab[i].text;
+        const char *b = word;
+        int match = 1;
+        while (*a && *b) {
+            /* only lowercase ASCII chars for comparison */
+            char ca = (*a >= 'A' && *a <= 'Z') ? (char)(*a + 32) : *a;
+            char cb = (*b >= 'A' && *b <= 'Z') ? (char)(*b + 32) : *b;
+            if (ca != cb) { match = 0; break; }
+            a++; b++;
+        }
+        if (match && *a == '\0' && *b == '\0') return i;
+    }
+    return -1;
+}
+
+/* Parse one line into word ids, return count */
+static int parse_corpus_line(const char *line, int *ids, int max_ids) {
+    int count = 0;
+    char buf[128];
+    int bi = 0;
+    const unsigned char *p = (const unsigned char *)line;
+
+    for (;; p++) {
+        if (*p && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r') {
+            if (bi < 126) buf[bi++] = (char)*p;
+        } else {
+            if (bi > 0) {
+                buf[bi] = '\0';
+                int id = find_vocab_word(buf);
+                if (id >= 0 && count < max_ids)
+                    ids[count++] = id;
+                bi = 0;
+            }
+            if (!*p) break;
+        }
+    }
+    return count;
+}
+
+static void load_corpus_file(const char *path) {
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+
+    char line[CORPUS_LINE_MAX];
+    while (fgets(line, (int)sizeof(line), f)) {
+        /* skip empty lines */
+        int empty = 1;
+        for (int i = 0; line[i]; i++) {
+            if (line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != '\r') {
+                empty = 0; break;
+            }
+        }
+        if (empty) continue;
+
+        int ids[32];
+        int n = parse_corpus_line(line, ids, 32);
+        if (n < 2) continue;
+
+        corpus_total_lines++;
+
+        /* bigrams: adjacent words */
+        for (int i = 0; i < n - 1; i++)
+            corpus_bg_add(ids[i], ids[i + 1], 1.0f);
+
+        /* hebbian: co-occurrence within window, weighted by 1/distance */
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n && j < i + CORPUS_HEBBIAN_WIN; j++) {
+                float w = 1.0f / (float)(j - i);
+                corpus_hb_add(ids[i], ids[j], w);
+            }
+        }
+    }
+    fclose(f);
+}
+
+static void load_all_corpora(void) {
+    corpus_bg_init();
+    corpus_hb_init();
+    corpus_total_lines = 0;
+
+    /* Try multiple base paths for portability */
+    static const char *bases[] = {
+        "exhale/",
+        "./exhale/",
+        NULL
+    };
+    static const char *files[] = { "en.txt", "ru.txt", "he.txt", "fr.txt", "es.txt" };
+
+    for (int b = 0; bases[b]; b++) {
+        char path[256];
+        int found = 0;
+        for (int i = 0; i < 5; i++) {
+            snprintf(path, sizeof(path), "%s%s", bases[b], files[i]);
+            FILE *test = fopen(path, "r");
+            if (test) {
+                fclose(test);
+                found = 1;
+                break;
+            }
+        }
+        if (found) {
+            for (int i = 0; i < 5; i++) {
+                snprintf(path, sizeof(path), "%s%s", bases[b], files[i]);
+                load_corpus_file(path);
+            }
+            break;
+        }
+    }
+}
+
 /* ─── BIGRAM CHAIN ──────────────────────────────────────────────────── */
 
 /* Simple bigram: emotion-to-emotion transition probabilities */
@@ -959,6 +1178,14 @@ static float score_word(int idx) {
     if (tens > 0.0f)
         score += tens * 2.0f;   /* strong pull — tension pairs override most signals */
 
+    /* Corpus MetaWeights: word-level bigrams from exhale corpus */
+    float bg = corpus_bigram_score(org.last_word, idx);
+    score += bg * CORPUS_BG_WEIGHT;
+
+    /* Corpus Hebbian: co-occurrence within window from exhale corpus */
+    float hb = corpus_hebbian_score(org.last_word, idx);
+    score += hb * CORPUS_HB_WEIGHT;
+
     return score;
 }
 
@@ -1140,8 +1367,12 @@ static void generate_line(Line *line, int target_syl,
         org.acc_mass += vocab[idx].mass;
 
         /* update state */
-        if (org.last_word >= 0)
+        if (org.last_word >= 0) {
             hebbian_record(org.last_word, idx);
+            /* online corpus learning: reinforce generated bigrams & hebbian */
+            corpus_bg_add(org.last_word, idx, CORPUS_ONLINE_DECAY);
+            corpus_hb_add(org.last_word, idx, CORPUS_ONLINE_DECAY);
+        }
         org.last_emotion = vocab[idx].emotion;
         org.prev_was_adj = vocab[idx].is_adjective;
         org.last_word = idx;
@@ -1406,6 +1637,8 @@ static void print_banner(void) {
     printf("  %sa poetic organism%s\n", ANSI_DIM, ANSI_RESET);
     printf("  %svocab: %d words · %d languages · chambers: %d · emotions: %d%s\n",
            ANSI_DIM, vocab_size, LANG_COUNT, CH_COUNT, EMO_COUNT, ANSI_RESET);
+    printf("  %scorpus: %d lines · %d bigrams · %d hebbian%s\n",
+           ANSI_DIM, corpus_total_lines, corpus_bg.count, corpus_hb.count, ANSI_RESET);
     printf("  %splanet: %.3f · calendar: %.3f · season: %s%s\n",
            ANSI_DIM, org.planet_diss, org.cal_diss,
            season_names[org.season], ANSI_RESET);
@@ -1721,6 +1954,7 @@ static void web_serve(void) {
 int main(int argc, char **argv) {
     rng_seed((unsigned long)time(NULL));
     load_vocabulary();
+    load_all_corpora();
     organism_init();
 
     int web_mode = 0;
