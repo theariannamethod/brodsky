@@ -1,0 +1,1625 @@
+/*
+ * brodsky.c — a poetic organism
+ *
+ * Generates 5-7-5 haiku in cycles of 1-7, modulated by:
+ *   - 6 Kuramoto-coupled somatic chambers
+ *   - Julia field (longing without object)
+ *   - Planetary dissonance (8-planet Resultant)
+ *   - Calendar dissonance (Hebrew-Gregorian drift)
+ *   - Dario equation: p(x|Φ) = softmax((B + αH + βF + γA + T) / τ)
+ *   - Mass-weighted sampling, consonant density, syllable greed
+ *
+ * Compile: cc brodsky.c -O2 -lm -o brodsky
+ * Run:     ./brodsky          (REPL)
+ *          ./brodsky --web    (HTTP on port 3003)
+ *
+ * Vocabulary loaded from inhale/{en,ru,he,fr,es}.h via W() macro.
+ *
+ * Architecture: haiku.c lineage, extended with Julia field and
+ *               Brodsky-specific mechanics (enjambment, mass, greed).
+ *
+ * All code by Oleg Ataev. 2026.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+#include <ctype.h>
+#include <float.h>
+
+#ifdef __unix__
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <signal.h>
+#endif
+
+#ifdef __APPLE__
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <signal.h>
+#endif
+
+/* ─── CONSTANTS ─────────────────────────────────────────────────────── */
+
+#define MAX_VOCAB       1200
+#define MAX_LINE_WORDS  12
+#define MAX_HAIKU_WORDS 36
+#define DESTINY_DIM     8
+#define BIGRAM_SMOOTH   0.01f
+#define HEBBIAN_SLOTS   64
+#define TAU_BASE        1.2f
+#define JULIA_STRETCH   2.0f
+#define WEB_PORT        3003
+#define MAX_CYCLE_HAIKU 7
+#define EXHALE_COUNT    12
+
+/* ─── EMOTIONS ──────────────────────────────────────────────────────── */
+
+enum {
+    EMO_TRAUMA = 0, EMO_JOY, EMO_GRIEF, EMO_RESONANCE,
+    EMO_DESIRE, EMO_VOID, EMO_RAGE, EMO_TENDERNESS,
+    EMO_JULIA, EMO_COUNT
+};
+
+static const char *emo_names[EMO_COUNT] = {
+    "TRAUMA", "JOY", "GRIEF", "RESONANCE",
+    "DESIRE", "VOID", "RAGE", "TENDERNESS", "JULIA"
+};
+
+/* ANSI colors per emotion */
+static const char *emo_color[EMO_COUNT] = {
+    "\033[31m",   /* TRAUMA     - red */
+    "\033[33m",   /* JOY        - yellow */
+    "\033[34m",   /* GRIEF      - blue */
+    "\033[36m",   /* RESONANCE  - cyan */
+    "\033[35m",   /* DESIRE     - magenta */
+    "\033[90m",   /* VOID       - dark gray */
+    "\033[91m",   /* RAGE       - bright red */
+    "\033[32m",   /* TENDERNESS - green */
+    "\033[95m",   /* JULIA      - bright magenta */
+};
+
+#define ANSI_RESET "\033[0m"
+#define ANSI_BOLD  "\033[1m"
+#define ANSI_DIM   "\033[2m"
+
+/* ─── CHAMBERS (Kuramoto-coupled) ───────────────────────────────────── */
+
+enum {
+    CH_FEAR = 0, CH_LOVE, CH_RAGE, CH_VOID, CH_FLOW, CH_COMPLEX,
+    CH_COUNT
+};
+
+static const char *ch_names[CH_COUNT] = {
+    "FEAR", "LOVE", "RAGE", "VOID", "FLOW", "COMPLEX"
+};
+
+typedef struct {
+    float phase[CH_COUNT];
+    float freq[CH_COUNT];
+    float coupling;      /* K in Kuramoto model */
+} Chambers;
+
+/* ─── LANGUAGES ────────────────────────────────────────────────────── */
+
+enum { LANG_EN=0, LANG_RU, LANG_HE, LANG_FR, LANG_ES, LANG_COUNT };
+static const char *lang_names[LANG_COUNT] = { "EN", "RU", "HE", "FR", "ES" };
+
+/* ─── VELOCITY OPERATORS ────────────────────────────────────────────── */
+
+enum { VEL_WALK=0, VEL_RUN, VEL_STOP, VEL_BREATHE, VEL_UP, VEL_DOWN, VEL_COUNT };
+
+/* ─── WORD ──────────────────────────────────────────────────────────── */
+
+typedef struct {
+    const char *text;
+    float       mass;           /* 0.0 - 0.95 */
+    int         syllables;
+    int         emotion;
+    float       consonant_density;
+    float       destiny[DESTINY_DIM];
+    int         is_adjective;   /* rough POS tag */
+    int         lang;           /* LANG_EN..LANG_ES */
+} Word;
+
+/* ─── VOCABULARY ────────────────────────────────────────────────────── */
+
+static Word vocab[MAX_VOCAB];
+static int  vocab_size = 0;
+
+/* consonant density computed from text */
+static float compute_consonant_density(const char *w) {
+    int total = 0, cons = 0;
+    for (int i = 0; w[i]; i++) {
+        char c = (char)tolower((unsigned char)w[i]);
+        if (c >= 'a' && c <= 'z') {
+            total++;
+            if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u')
+                cons++;
+        }
+    }
+    return total > 0 ? (float)cons / (float)total : 0.0f;
+}
+
+/* rough adjective list — about 30 words that commonly appear in vocab */
+static const char *adjectives[] = {
+    "obsolete", "inconsolable", "perpendicular", "parallel", "diagonal",
+    "calcify", /* participle-ish */
+    NULL
+};
+
+static int is_adjective_word(const char *w) {
+    for (int i = 0; adjectives[i]; i++)
+        if (strcmp(w, adjectives[i]) == 0) return 1;
+    /* heuristic: words ending in -al, -ble, -ous, -ive, -less */
+    int len = (int)strlen(w);
+    if (len >= 3) {
+        if (strcmp(w + len - 2, "al") == 0) return 1;
+        if (len >= 4 && strcmp(w + len - 3, "ble") == 0) return 1;
+        if (len >= 4 && strcmp(w + len - 3, "ous") == 0) return 1;
+        if (len >= 4 && strcmp(w + len - 3, "ive") == 0) return 1;
+        if (len >= 5 && strcmp(w + len - 4, "less") == 0) return 1;
+    }
+    return 0;
+}
+
+/* Raw word entry from inhale header */
+typedef struct {
+    const char *text;
+    float       mass;
+    int         syllables;
+    int         emotion;
+    int         lang;
+} RawWord;
+
+/* Expand all 5 inhale headers into static arrays */
+#define W(word, m, s, e) { word, m, s, e, LANG_EN }
+#include "inhale/en.h"
+static const RawWord raw_en[] = { INHALE_EN };
+#undef W
+
+#define W(word, m, s, e) { word, m, s, e, LANG_RU }
+#include "inhale/ru.h"
+static const RawWord raw_ru[] = { INHALE_RU };
+#undef W
+
+#define W(word, m, s, e) { word, m, s, e, LANG_HE }
+#include "inhale/he.h"
+static const RawWord raw_he[] = { INHALE_HE };
+#undef W
+
+#define W(word, m, s, e) { word, m, s, e, LANG_FR }
+#include "inhale/fr.h"
+static const RawWord raw_fr[] = { INHALE_FR };
+#undef W
+
+#define W(word, m, s, e) { word, m, s, e, LANG_ES }
+#include "inhale/es.h"
+static const RawWord raw_es[] = { INHALE_ES };
+#undef W
+
+#define RAW_EN_COUNT ((int)(sizeof(raw_en) / sizeof(raw_en[0])))
+#define RAW_RU_COUNT ((int)(sizeof(raw_ru) / sizeof(raw_ru[0])))
+#define RAW_HE_COUNT ((int)(sizeof(raw_he) / sizeof(raw_he[0])))
+#define RAW_FR_COUNT ((int)(sizeof(raw_fr) / sizeof(raw_fr[0])))
+#define RAW_ES_COUNT ((int)(sizeof(raw_es) / sizeof(raw_es[0])))
+
+/* Load one raw array into vocab */
+static void load_raw_array(const RawWord *raw, int raw_count) {
+    for (int r = 0; r < raw_count && vocab_size < MAX_VOCAB; r++) {
+        /* skip dead function words — Brodsky doesn't need articles */
+        if (raw[r].mass < 0.10f) continue;
+
+        /* check for duplicate */
+        int dup = 0;
+        for (int i = 0; i < vocab_size; i++) {
+            if (strcmp(vocab[i].text, raw[r].text) == 0) { dup = 1; break; }
+        }
+        if (dup) continue;
+
+        vocab[vocab_size].text      = raw[r].text;
+        vocab[vocab_size].mass      = raw[r].mass;
+        vocab[vocab_size].syllables = raw[r].syllables;
+        vocab[vocab_size].emotion   = raw[r].emotion;
+        vocab[vocab_size].lang      = raw[r].lang;
+
+        /* consonant density: meaningful for Latin alphabet only */
+        if (raw[r].lang == LANG_EN || raw[r].lang == LANG_FR || raw[r].lang == LANG_ES)
+            vocab[vocab_size].consonant_density = compute_consonant_density(raw[r].text);
+        else
+            vocab[vocab_size].consonant_density = 0.5f;
+
+        /* is_adjective heuristic only works for English */
+        vocab[vocab_size].is_adjective = (raw[r].lang == LANG_EN) ? is_adjective_word(raw[r].text) : 0;
+
+        /* destiny vector: seeded from word hash */
+        unsigned h = 5381;
+        for (const char *p = raw[r].text; *p; p++)
+            h = h * 33 + (unsigned)*p;
+        for (int d = 0; d < DESTINY_DIM; d++) {
+            h ^= h >> 13; h *= 0x5bd1e995; h ^= h >> 15;
+            vocab[vocab_size].destiny[d] = ((float)(h & 0xFFFF) / 65535.0f) * 2.0f - 1.0f;
+        }
+        vocab_size++;
+    }
+}
+
+/* Load vocabulary: all 5 languages, deduplicate, compute derived fields */
+static void load_vocabulary(void) {
+    load_raw_array(raw_en, RAW_EN_COUNT);
+    load_raw_array(raw_ru, RAW_RU_COUNT);
+    load_raw_array(raw_he, RAW_HE_COUNT);
+    load_raw_array(raw_fr, RAW_FR_COUNT);
+    load_raw_array(raw_es, RAW_ES_COUNT);
+}
+
+/* ─── LANGUAGE DETECTION ────────────────────────────────────────────── */
+
+static int detect_language(const char *text) {
+    int cyrillic = 0, hebrew = 0, french = 0, spanish = 0;
+    const unsigned char *p = (const unsigned char *)text;
+    while (*p) {
+        if (*p == 0xD7 && p[1] >= 0x80 && p[1] <= 0xBF) {
+            /* Hebrew: U+0590-U+05FF → 0xD6 0x90..0xBF or 0xD7 0x80..0xBF */
+            hebrew++;
+            p += 2;
+        } else if (*p == 0xD6 && p[1] >= 0x90 && p[1] <= 0xBF) {
+            hebrew++;
+            p += 2;
+        } else if ((*p == 0xD0 || *p == 0xD1) && p[1] >= 0x80 && p[1] <= 0xBF) {
+            /* Cyrillic: U+0400-U+04FF → 0xD0/0xD1 */
+            cyrillic++;
+            p += 2;
+        } else if (*p == 0xC3 && p[1]) {
+            /* Latin extended: é(A9) è(A8) ê(AA) ë(AB) à(A0) â(A2) ç(A7) ù(B9) î(AE) ô(B4)
+               ñ(B1) á(A1) ó(B3) ú(BA) */
+            unsigned char c2 = p[1];
+            if (c2 == 0xB1) { /* ñ */
+                spanish++;
+            } else if (c2 == 0xA9 || c2 == 0xA8 || c2 == 0xAA || c2 == 0xAB ||
+                       c2 == 0xA0 || c2 == 0xA2 || c2 == 0xA7 || c2 == 0xB9 ||
+                       c2 == 0xAE || c2 == 0xB4) {
+                french++;
+            } else if (c2 == 0xA1 || c2 == 0xB3 || c2 == 0xBA) {
+                /* á, ó, ú — shared with Spanish, but also French */
+                spanish++;
+                french++;
+            }
+            p += 2;
+        } else if (*p == 0xC2 && (p[1] == 0xBF || p[1] == 0xA1)) {
+            /* ¿(C2 BF) ¡(C2 A1) — uniquely Spanish */
+            spanish++;
+            p += 2;
+        } else {
+            p++;
+        }
+    }
+
+    if (hebrew > 0 && hebrew >= cyrillic && hebrew >= french && hebrew >= spanish)
+        return LANG_HE;
+    if (cyrillic > 0 && cyrillic >= hebrew && cyrillic >= french && cyrillic >= spanish)
+        return LANG_RU;
+    if (spanish > french && spanish > 0)
+        return LANG_ES;
+    if (french > 0)
+        return LANG_FR;
+    return LANG_EN;
+}
+
+/* ─── GHOST LANGUAGE (planetary association) ────────────────────────── */
+
+/*
+ * Mercury(88d)→ES, Venus(225d)→FR, Mars(687d)→RU, Saturn(10759d)→HE, default→EN
+ * Pick the planet with highest individual phase contribution to dissonance.
+ */
+static int ghost_language(void) {
+    static const float periods[8] = {
+        87.97f, 224.7f, 365.25f, 687.0f,
+        4332.6f, 10759.2f, 30687.0f, 60190.0f
+    };
+    /* planet→lang mapping: Mercury=ES, Venus=FR, Earth=EN, Mars=RU,
+       Jupiter=EN, Saturn=HE, Uranus=EN, Neptune=EN */
+    static const int planet_lang[8] = {
+        LANG_ES, LANG_FR, LANG_EN, LANG_RU,
+        LANG_EN, LANG_HE, LANG_EN, LANG_EN
+    };
+
+    time_t now = time(NULL);
+    double j2000_epoch = 946728000.0;
+    double days = ((double)(now) - j2000_epoch) / 86400.0;
+
+    /* find planet with maximum individual dissonance contribution */
+    float max_diss = -1.0f;
+    int max_planet = 0;
+    for (int k = 0; k < 8; k++) {
+        float theta = fmodf((float)(2.0 * M_PI * days / (double)periods[k]),
+                            (float)(2.0 * M_PI));
+        /* individual dissonance = distance from alignment (cos=1) */
+        float diss = 1.0f - cosf(theta);
+        if (diss > max_diss) {
+            max_diss = diss;
+            max_planet = k;
+        }
+    }
+    return planet_lang[max_planet];
+}
+
+/* ─── EXHALE RESONANCE (Brodsky fragments — modulate destiny) ─────── */
+
+typedef struct {
+    const char *text;
+    float       destiny[DESTINY_DIM];
+} ExhaleFragment;
+
+static ExhaleFragment exhale[EXHALE_COUNT] = {
+    {"the end of a beautiful era",       {0.3f,-0.8f, 0.1f, 0.5f,-0.2f, 0.7f,-0.4f, 0.1f}},
+    {"a part of speech",                 {0.5f, 0.2f,-0.6f, 0.3f, 0.8f,-0.1f, 0.4f,-0.3f}},
+    {"from nowhere with love",           {-0.7f, 0.9f, 0.2f,-0.4f, 0.1f, 0.6f,-0.3f, 0.5f}},
+    {"in a room and a half",             {0.1f,-0.3f, 0.7f,-0.6f, 0.4f, 0.2f, 0.8f,-0.5f}},
+    {"less than one",                    {-0.9f, 0.1f,-0.5f, 0.8f,-0.3f, 0.4f, 0.2f, 0.6f}},
+    {"the water writes always",          {0.4f, 0.6f,-0.2f,-0.7f, 0.5f,-0.8f, 0.1f, 0.3f}},
+    {"dust is the flesh of time",        {0.8f,-0.4f, 0.3f, 0.1f,-0.6f, 0.5f,-0.7f, 0.2f}},
+    {"what gets left of a man",          {-0.5f, 0.3f, 0.6f,-0.2f, 0.7f,-0.1f, 0.4f,-0.8f}},
+    {"the language is older than state", {0.2f,-0.6f,-0.4f, 0.9f, 0.1f, 0.3f,-0.5f, 0.7f}},
+    {"love as a form of sin",            {-0.3f, 0.8f, 0.5f,-0.1f,-0.7f, 0.2f, 0.6f,-0.4f}},
+    {"geography of evil",                {0.6f,-0.2f, 0.8f,-0.5f, 0.3f,-0.9f, 0.1f, 0.4f}},
+    {"time worships language",           {-0.1f, 0.4f,-0.3f, 0.6f,-0.8f, 0.5f, 0.7f,-0.2f}},
+};
+
+/* ─── RNG ───────────────────────────────────────────────────────────── */
+
+static unsigned long rng_state = 0;
+
+static void rng_seed(unsigned long s) {
+    rng_state = s ? s : 42;
+}
+
+static unsigned long rng_next(void) {
+    rng_state ^= rng_state << 13;
+    rng_state ^= rng_state >> 7;
+    rng_state ^= rng_state << 17;
+    return rng_state;
+}
+
+static float rng_float(void) {
+    return (float)(rng_next() & 0xFFFFFF) / (float)0xFFFFFF;
+}
+
+/* ─── MATH HELPERS ──────────────────────────────────────────────────── */
+
+static float sigmoid(float x) {
+    return 1.0f / (1.0f + expf(-x));
+}
+
+static float vec_dist(const float *a, const float *b, int n) {
+    float s = 0.0f;
+    for (int i = 0; i < n; i++) s += (a[i] - b[i]) * (a[i] - b[i]);
+    return sqrtf(s);
+}
+
+static void vec_normalize(float *v, int n) {
+    float mag = 0.0f;
+    for (int i = 0; i < n; i++) mag += v[i] * v[i];
+    mag = sqrtf(mag);
+    if (mag > 1e-8f)
+        for (int i = 0; i < n; i++) v[i] /= mag;
+}
+
+/* ─── PLANETARY DISSONANCE ──────────────────────────────────────────── */
+
+static float planetary_dissonance(void) {
+    /* orbital periods in days */
+    static const float periods[8] = {
+        87.97f, 224.7f, 365.25f, 687.0f,
+        4332.6f, 10759.2f, 30687.0f, 60190.0f
+    };
+
+    /* days since J2000 (2000-01-01 12:00 TT) */
+    time_t now = time(NULL);
+    double j2000_epoch = 946728000.0;  /* approx unix timestamp for J2000 */
+    double days = (double)(now) - j2000_epoch;
+    days /= 86400.0;
+
+    /* resultant vector R = |Σ e^(iθ_k)| / N */
+    float rx = 0.0f, ry = 0.0f;
+    for (int k = 0; k < 8; k++) {
+        float theta = fmodf((float)(2.0 * M_PI * days / (double)periods[k]),
+                            (float)(2.0 * M_PI));
+        rx += cosf(theta);
+        ry += sinf(theta);
+    }
+    float R = sqrtf(rx * rx + ry * ry) / 8.0f;
+    return 1.0f - R;  /* dissonance = 1 - coherence */
+}
+
+/* ─── CALENDAR DISSONANCE (Hebrew-Gregorian drift) ──────────────────── */
+
+static float calendar_dissonance(void) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    int day_of_year = t->tm_yday;
+    /* Hebrew calendar drifts ~11.25 days/year from Gregorian */
+    float drift = fmodf((float)day_of_year * 11.25f / 365.25f, 1.0f);
+    /* dissonance peaks when drift is 0.5 (maximally out of phase) */
+    return 0.5f - fabsf(drift - 0.5f);
+}
+
+/* ─── SEASONAL MODULATION ───────────────────────────────────────────── */
+
+enum { SEASON_SPRING=0, SEASON_SUMMER, SEASON_AUTUMN, SEASON_WINTER };
+
+static int current_season(void) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    int m = t->tm_mon; /* 0-11 */
+    if (m >= 2 && m <= 4) return SEASON_SPRING;
+    if (m >= 5 && m <= 7) return SEASON_SUMMER;
+    if (m >= 8 && m <= 10) return SEASON_AUTUMN;
+    return SEASON_WINTER;
+}
+
+/* seasonal biases on emotions [season][emotion] */
+static const float season_bias[4][EMO_COUNT] = {
+    /* spring:  */ {-0.1f, 0.3f,-0.2f, 0.2f, 0.3f,-0.3f,-0.1f, 0.2f, 0.1f},
+    /* summer:  */ {-0.2f, 0.4f,-0.3f, 0.1f, 0.2f,-0.2f, 0.1f, 0.1f,-0.1f},
+    /* autumn:  */ { 0.1f,-0.1f, 0.3f, 0.2f,-0.1f, 0.3f, 0.1f,-0.1f, 0.3f},
+    /* winter:  */ { 0.3f,-0.2f, 0.2f,-0.1f,-0.2f, 0.4f, 0.2f,-0.2f, 0.2f},
+};
+
+/* ─── CHAMBERS: Kuramoto step ───────────────────────────────────────── */
+
+static void chambers_init(Chambers *c) {
+    c->coupling = 0.5f;
+    for (int i = 0; i < CH_COUNT; i++) {
+        c->phase[i] = rng_float() * 2.0f * (float)M_PI;
+        c->freq[i] = 0.8f + rng_float() * 0.4f;
+    }
+}
+
+static void chambers_step(Chambers *c, float dt) {
+    float new_phase[CH_COUNT];
+    for (int i = 0; i < CH_COUNT; i++) {
+        float coupling_sum = 0.0f;
+        for (int j = 0; j < CH_COUNT; j++) {
+            if (j != i)
+                coupling_sum += sinf(c->phase[j] - c->phase[i]);
+        }
+        new_phase[i] = c->phase[i] + dt * (c->freq[i] +
+                        c->coupling / (float)(CH_COUNT - 1) * coupling_sum);
+        new_phase[i] = fmodf(new_phase[i], 2.0f * (float)M_PI);
+        if (new_phase[i] < 0) new_phase[i] += 2.0f * (float)M_PI;
+    }
+    memcpy(c->phase, new_phase, sizeof(new_phase));
+}
+
+/* chamber activation: maps phase to [-1, 1] */
+static float chamber_activation(const Chambers *c, int ch) {
+    return sinf(c->phase[ch]);
+}
+
+/* ─── HEBBIAN PROFILE ───────────────────────────────────────────────── */
+
+typedef struct {
+    int   word_a[HEBBIAN_SLOTS];
+    int   word_b[HEBBIAN_SLOTS];
+    float strength[HEBBIAN_SLOTS];
+    int   count;
+} HebbianProfile;
+
+static HebbianProfile hebbian;
+
+static void hebbian_init(void) {
+    memset(&hebbian, 0, sizeof(hebbian));
+}
+
+static void hebbian_record(int a, int b) {
+    if (a < 0 || b < 0) return;
+    /* find existing pair */
+    for (int i = 0; i < hebbian.count; i++) {
+        if ((hebbian.word_a[i] == a && hebbian.word_b[i] == b) ||
+            (hebbian.word_a[i] == b && hebbian.word_b[i] == a)) {
+            hebbian.strength[i] += 0.1f;
+            if (hebbian.strength[i] > 1.0f) hebbian.strength[i] = 1.0f;
+            return;
+        }
+    }
+    /* add new */
+    if (hebbian.count < HEBBIAN_SLOTS) {
+        hebbian.word_a[hebbian.count] = a;
+        hebbian.word_b[hebbian.count] = b;
+        hebbian.strength[hebbian.count] = 0.1f;
+        hebbian.count++;
+    }
+}
+
+static float hebbian_score(int a, int b) {
+    for (int i = 0; i < hebbian.count; i++) {
+        if ((hebbian.word_a[i] == a && hebbian.word_b[i] == b) ||
+            (hebbian.word_a[i] == b && hebbian.word_b[i] == a))
+            return hebbian.strength[i];
+    }
+    return 0.0f;
+}
+
+/* ─── BIGRAM CHAIN ──────────────────────────────────────────────────── */
+
+/* Simple bigram: emotion-to-emotion transition probabilities */
+static float bigram[EMO_COUNT][EMO_COUNT];
+
+static void bigram_init(void) {
+    /* Brodsky-esque transitions: VOID leads anywhere,
+       JULIA pulls toward TRAUMA and GRIEF, etc. */
+    for (int i = 0; i < EMO_COUNT; i++)
+        for (int j = 0; j < EMO_COUNT; j++)
+            bigram[i][j] = 1.0f / (float)EMO_COUNT;
+
+    /* hand-tuned biases */
+    bigram[EMO_JULIA][EMO_TRAUMA]     = 0.25f;
+    bigram[EMO_JULIA][EMO_GRIEF]      = 0.20f;
+    bigram[EMO_JULIA][EMO_VOID]       = 0.15f;
+    bigram[EMO_JULIA][EMO_RESONANCE]  = 0.15f;
+    bigram[EMO_TRAUMA][EMO_VOID]      = 0.30f;
+    bigram[EMO_TRAUMA][EMO_RAGE]      = 0.20f;
+    bigram[EMO_VOID][EMO_JULIA]       = 0.25f;
+    bigram[EMO_VOID][EMO_RESONANCE]   = 0.20f;
+    bigram[EMO_RESONANCE][EMO_JULIA]  = 0.20f;
+    bigram[EMO_RESONANCE][EMO_JOY]    = 0.15f;
+    bigram[EMO_GRIEF][EMO_VOID]       = 0.25f;
+    bigram[EMO_GRIEF][EMO_TENDERNESS] = 0.20f;
+    bigram[EMO_TENDERNESS][EMO_JULIA] = 0.25f;
+    bigram[EMO_RAGE][EMO_VOID]        = 0.30f;
+}
+
+/* ─── ORGANISM STATE ────────────────────────────────────────────────── */
+
+typedef struct {
+    /* chambers */
+    Chambers chambers;
+
+    /* julia field — grows within cycle, resets between */
+    float julia;
+
+    /* destiny vector — drifts across haiku */
+    float destiny[DESTINY_DIM];
+
+    /* current emotion context */
+    int   last_emotion;
+
+    /* metaweights (Dario equation coefficients) */
+    float alpha;   /* Hebbian weight */
+    float beta;    /* prophecy weight */
+    float gamma_w; /* destiny attraction weight */
+    float trauma_w;/* trauma gravity */
+
+    /* temperature */
+    float tau;
+
+    /* velocity */
+    int   velocity;
+
+    /* accumulated mass in current cycle */
+    float acc_mass;
+
+    /* saturation (how many haiku generated in cycle) */
+    int   haiku_in_cycle;
+
+    /* used words in cycle (for repetition penalty) */
+    int   used[MAX_VOCAB];
+    int   used_count;
+
+    /* last word was adjective? */
+    int   prev_was_adj;
+
+    /* last word index */
+    int   last_word;
+
+    /* planetary */
+    float planet_diss;
+
+    /* calendar */
+    float cal_diss;
+
+    /* season */
+    int   season;
+
+    /* enjambment carry from previous haiku */
+    int   enjamb;
+    float enjamb_destiny[DESTINY_DIM];
+
+    /* current target language */
+    int   current_lang;
+} Organism;
+
+static Organism org;
+
+/* ─── ORGANISM INIT ─────────────────────────────────────────────────── */
+
+static void organism_init(void) {
+    memset(&org, 0, sizeof(org));
+    chambers_init(&org.chambers);
+    org.julia = 0.0f;
+    org.last_emotion = EMO_VOID;
+    org.alpha   = 0.15f;
+    org.beta    = 0.10f;
+    org.gamma_w = 0.20f;
+    org.trauma_w = 0.15f;
+    org.tau = TAU_BASE;
+    org.velocity = VEL_WALK;
+    org.last_word = -1;
+    org.current_lang = LANG_EN;
+    org.planet_diss = planetary_dissonance();
+    org.cal_diss = calendar_dissonance();
+    org.season = current_season();
+
+    /* seed destiny from time */
+    unsigned s = (unsigned)time(NULL);
+    for (int i = 0; i < DESTINY_DIM; i++) {
+        s = s * 1103515245 + 12345;
+        org.destiny[i] = ((float)(s & 0xFFFF) / 65535.0f) * 2.0f - 1.0f;
+    }
+    vec_normalize(org.destiny, DESTINY_DIM);
+
+    hebbian_init();
+    bigram_init();
+}
+
+/* ─── INGEST USER PROMPT ────────────────────────────────────────────── */
+
+/* helper: is this byte part of a "word" character? (ASCII alnum, or UTF-8 continuation/lead) */
+static int is_word_byte(unsigned char c) {
+    if (c >= 0x80) return 1;          /* UTF-8 lead/continuation — part of multibyte char */
+    if (c >= 'a' && c <= 'z') return 1;
+    if (c >= 'A' && c <= 'Z') return 1;
+    if (c >= '0' && c <= '9') return 1;
+    if (c == '\'' || c == '-') return 1;
+    return 0;
+}
+
+static float ingest_prompt(const char *text) {
+    /* detect language from input and set organism target */
+    org.current_lang = detect_language(text);
+
+    /* Tokenize: find known words in input, measure dissonance */
+    char buf[128];
+    int bi = 0, n_words = 0, n_known = 0;
+    int known_ids[64];
+    int n_ids = 0;
+
+    for (const unsigned char *p = (const unsigned char *)text; ; p++) {
+        if (*p && is_word_byte(*p)) {
+            /* for ASCII, lowercase; for UTF-8 multibyte, copy as-is */
+            if (*p < 0x80) {
+                if (bi < 126) buf[bi++] = (char)tolower(*p);
+            } else {
+                if (bi < 126) buf[bi++] = (char)*p;
+            }
+        } else {
+            if (bi > 0) {
+                buf[bi] = '\0';
+                n_words++;
+                for (int i = 0; i < vocab_size; i++) {
+                    if (strcmp(vocab[i].text, buf) == 0) {
+                        n_known++;
+                        if (n_ids < 64) known_ids[n_ids++] = i;
+                        break;
+                    }
+                }
+                bi = 0;
+            }
+            if (!*p) break;
+        }
+    }
+
+    /* dissonance = how alien the input is */
+    float dissonance = (n_words > 0)
+        ? 1.0f - (float)n_known / (float)n_words
+        : 1.0f;
+
+    /* update destiny toward known words */
+    for (int i = 0; i < n_ids; i++) {
+        float *we = vocab[known_ids[i]].destiny;
+        for (int d = 0; d < DESTINY_DIM; d++)
+            org.destiny[d] = 0.7f * org.destiny[d] + 0.3f * we[d];
+    }
+    if (n_ids > 0) vec_normalize(org.destiny, DESTINY_DIM);
+
+    /* hebbian co-occurrence from known words */
+    for (int i = 0; i < n_ids; i++)
+        for (int j = i+1; j < n_ids && j < i+5; j++)
+            hebbian_record(known_ids[i], known_ids[j]);
+
+    /* emotional charge from input words */
+    for (int i = 0; i < n_ids; i++) {
+        int emo = vocab[known_ids[i]].emotion;
+        float mass = vocab[known_ids[i]].mass;
+        switch (emo) {
+            case EMO_TRAUMA: org.chambers.phase[CH_FEAR] += mass * 0.3f; break;
+            case EMO_TENDERNESS: org.chambers.phase[CH_LOVE] += mass * 0.3f; break;
+            case EMO_RAGE: org.chambers.phase[CH_RAGE] += mass * 0.3f; break;
+            case EMO_VOID: org.chambers.phase[CH_VOID] += mass * 0.3f; break;
+            case EMO_RESONANCE: org.chambers.phase[CH_FLOW] += mass * 0.3f; break;
+            case EMO_JULIA: org.julia += mass * 0.2f; break;
+            default: break;
+        }
+    }
+
+    /* high dissonance = trauma */
+    if (dissonance > 0.7f)
+        org.chambers.phase[CH_FEAR] += dissonance * 0.2f;
+
+    return dissonance;
+}
+
+/* ─── RESET CYCLE STATE ─────────────────────────────────────────────── */
+
+static void cycle_reset(void) {
+    org.julia = 0.0f;
+    org.acc_mass = 0.0f;
+    org.haiku_in_cycle = 0;
+    org.used_count = 0;
+    org.prev_was_adj = 0;
+    org.last_word = -1;
+    org.enjamb = 0;
+    memset(org.used, 0, sizeof(org.used));
+
+    /* refresh environmental readings */
+    org.planet_diss = planetary_dissonance();
+    org.cal_diss = calendar_dissonance();
+    org.season = current_season();
+
+    /* slight destiny drift from exhale resonance */
+    int frag = (int)(rng_next() % EXHALE_COUNT);
+    for (int d = 0; d < DESTINY_DIM; d++)
+        org.destiny[d] = 0.85f * org.destiny[d] + 0.15f * exhale[frag].destiny[d];
+    vec_normalize(org.destiny, DESTINY_DIM);
+}
+
+/* ─── MARK WORD USED ────────────────────────────────────────────────── */
+
+static void mark_used(int idx) {
+    if (org.used_count < MAX_VOCAB)
+        org.used[org.used_count++] = idx;
+}
+
+static int is_used(int idx) {
+    for (int i = 0; i < org.used_count; i++)
+        if (org.used[i] == idx) return 1;
+    return 0;
+}
+
+/* ─── SCORE A CANDIDATE WORD (Dario equation) ──────────────────────── */
+
+static float score_word(int idx) {
+    Word *w = &vocab[idx];
+    float score = 0.0f;
+
+    /* B: bigram chain — emotion transition from last_emotion */
+    score += bigram[org.last_emotion][w->emotion] * 1.0f;
+
+    /* H: Hebbian resonance */
+    if (org.last_word >= 0) {
+        float h = hebbian_score(org.last_word, idx);
+        score += org.alpha * h;
+    }
+
+    /* F: Prophecy fulfillment — seasonal bias */
+    score += org.beta * season_bias[org.season][w->emotion];
+
+    /* A: Destiny attraction — cosine similarity to current destiny */
+    float dist = vec_dist(w->destiny, org.destiny, DESTINY_DIM);
+    float effective_dist = dist * (1.0f + org.julia * JULIA_STRETCH);
+    float attraction = 1.0f / (1.0f + effective_dist);
+    score += org.gamma_w * attraction;
+
+    /* T: Trauma gravity — words with TRAUMA emotion get pulled harder */
+    if (w->emotion == EMO_TRAUMA)
+        score += org.trauma_w * (0.5f + org.planet_diss * 0.5f);
+
+    /* Chamber modulation */
+    float ch_mod = 0.0f;
+    /* map emotions to chambers roughly */
+    ch_mod += chamber_activation(&org.chambers, CH_FEAR)  * (w->emotion == EMO_TRAUMA ? 0.3f : 0.0f);
+    ch_mod += chamber_activation(&org.chambers, CH_LOVE)  * (w->emotion == EMO_JULIA ? 0.3f : 0.0f);
+    ch_mod += chamber_activation(&org.chambers, CH_RAGE)  * (w->emotion == EMO_RAGE ? 0.3f : 0.0f);
+    ch_mod += chamber_activation(&org.chambers, CH_VOID)  * (w->emotion == EMO_VOID ? 0.2f : 0.0f);
+    ch_mod += chamber_activation(&org.chambers, CH_FLOW)  * (w->emotion == EMO_RESONANCE ? 0.2f : 0.0f);
+    ch_mod += chamber_activation(&org.chambers, CH_COMPLEX) * 0.05f;
+    score += ch_mod;
+
+    /* Calendar dissonance: boosts GRIEF and VOID */
+    if (w->emotion == EMO_GRIEF || w->emotion == EMO_VOID)
+        score += org.cal_diss * 0.2f;
+
+    /* Julia emotion bonus */
+    if (w->emotion == EMO_JULIA)
+        score += org.julia * 0.3f;
+
+    return score;
+}
+
+/* ─── SAMPLE A WORD ─────────────────────────────────────────────────── */
+
+/*
+ * Given syllable budget, select a word.
+ * Applies: mass weighting, consonant density, syllable greed,
+ *          adjective penalty, repetition penalty, velocity mod.
+ */
+/*
+ * target_lang: primary language for this line
+ * ghost_lang:  if >= 0, allow ONE word from this language (ghost voice)
+ * ghost_used:  pointer to flag, set to 1 once ghost word is emitted
+ */
+static int sample_word(int syl_remaining, int force_max_syl,
+                       int target_lang, int ghost_lang, int *ghost_used) {
+    float logits[MAX_VOCAB];
+    int   candidates[MAX_VOCAB];
+    int   n_cand = 0;
+
+    /* gather candidates that fit syllable budget */
+    for (int i = 0; i < vocab_size; i++) {
+        if (vocab[i].syllables > syl_remaining) continue;
+        if (is_used(i)) continue;
+        candidates[n_cand] = i;
+        logits[n_cand] = score_word(i);
+        n_cand++;
+    }
+
+    if (n_cand == 0) return -1;
+
+    /* language filter: remove foreign words from candidates, keep ghost */
+    {
+        int new_cand = 0;
+        for (int i = 0; i < n_cand; i++) {
+            int wlang = vocab[candidates[i]].lang;
+            int keep = 0;
+            if (wlang == target_lang) {
+                keep = 1;
+            } else if (ghost_lang >= 0 && wlang == ghost_lang && ghost_used && !*ghost_used) {
+                /* ghost voice: keep one candidate from ghost language */
+                keep = 1;
+                logits[i] *= 0.3f; /* reduce weight relative to target */
+            }
+            /* else: foreign word, drop it */
+            if (keep) {
+                candidates[new_cand] = candidates[i];
+                logits[new_cand] = logits[i];
+                new_cand++;
+            }
+        }
+        /* if no target-lang candidates at all, fall back to all */
+        if (new_cand > 0) n_cand = new_cand;
+    }
+
+    /* mass weighting: heavy words dominate.
+     * function words (mass < 0.20) almost never appear.
+     * Brodsky uses prepositions sparingly — "beneath", "against", "beyond"
+     * are allowed because they have mass >= 0.25. "the", "a", "is" — killed. */
+    for (int i = 0; i < n_cand; i++) {
+        float m = vocab[candidates[i]].mass;
+        if (m < 0.12f)
+            logits[i] *= 0.001f;   /* "the", "a", "is", "of" — effectively dead */
+        else if (m < 0.20f)
+            logits[i] *= 0.02f;    /* "that", "which", "when" — rare */
+        else
+            logits[i] *= (0.15f + 0.85f * m);
+    }
+
+    /* consecutive function/light word penalty:
+     * never two light words in a row */
+    if (org.last_word >= 0 && vocab[org.last_word].mass < 0.30f) {
+        for (int i = 0; i < n_cand; i++) {
+            if (vocab[candidates[i]].mass < 0.30f)
+                logits[i] *= 0.005f;
+        }
+    }
+
+    /* consonant density bonus — Brodsky's sound clusters */
+    for (int i = 0; i < n_cand; i++)
+        logits[i] *= (1.0f + 0.5f * vocab[candidates[i]].consonant_density);
+
+    /* syllable greed: prefer longer words strongly */
+    if (!force_max_syl) {
+        for (int i = 0; i < n_cand; i++) {
+            int s = vocab[candidates[i]].syllables;
+            if (s >= 4)      logits[i] *= 3.0f;
+            else if (s >= 3) logits[i] *= 2.2f;
+            else if (s == 2) logits[i] *= 1.4f;
+            /* 1-syllable: no bonus — must earn its place */
+        }
+    } else {
+        /* force max syllable: strongly prefer words that eat remaining budget */
+        for (int i = 0; i < n_cand; i++) {
+            if (vocab[candidates[i]].syllables == syl_remaining)
+                logits[i] *= 5.0f;
+        }
+    }
+
+    /* adjacent adjective penalty */
+    if (org.prev_was_adj) {
+        for (int i = 0; i < n_cand; i++) {
+            if (vocab[candidates[i]].is_adjective)
+                logits[i] *= 0.05f;
+        }
+    }
+
+    /* velocity modulation */
+    float vel_mult = 1.0f;
+    switch (org.velocity) {
+        case VEL_RUN:     vel_mult = 1.3f; break;
+        case VEL_STOP:    vel_mult = 0.7f; break;
+        case VEL_BREATHE: vel_mult = 0.8f; break;
+        case VEL_UP:      vel_mult = 1.1f; break;
+        case VEL_DOWN:    vel_mult = 0.9f; break;
+        default: break;
+    }
+    for (int i = 0; i < n_cand; i++)
+        logits[i] *= vel_mult;
+
+    /* softmax with temperature */
+    float max_l = -1e30f;
+    for (int i = 0; i < n_cand; i++)
+        if (logits[i] > max_l) max_l = logits[i];
+
+    float sum = 0.0f;
+    for (int i = 0; i < n_cand; i++) {
+        logits[i] = expf((logits[i] - max_l) / org.tau);
+        sum += logits[i];
+    }
+    if (sum < 1e-10f) sum = 1e-10f;
+
+    /* sample */
+    float r = rng_float() * sum;
+    float cumsum = 0.0f;
+    int picked = candidates[n_cand - 1];
+    for (int i = 0; i < n_cand; i++) {
+        cumsum += logits[i];
+        if (cumsum >= r) { picked = candidates[i]; break; }
+    }
+
+    /* track ghost word usage */
+    if (ghost_used && ghost_lang >= 0 && vocab[picked].lang == ghost_lang
+        && vocab[picked].lang != target_lang) {
+        *ghost_used = 1;
+    }
+
+    return picked;
+}
+
+/* ─── GENERATE ONE LINE ─────────────────────────────────────────────── */
+
+typedef struct {
+    int  words[MAX_LINE_WORDS];
+    int  count;
+    int  syllables;
+} Line;
+
+/*
+ * target_lang: primary language
+ * ghost_lang: if >= 0, allow one ghost word from this language
+ * ghost_used: pointer to ghost tracking flag
+ */
+static void generate_line(Line *line, int target_syl,
+                          int target_lang, int ghost_lang, int *ghost_used) {
+    line->count = 0;
+    line->syllables = 0;
+
+    while (line->syllables < target_syl && line->count < MAX_LINE_WORDS) {
+        int remaining = target_syl - line->syllables;
+        /* if only 1-2 syllables left, try to force exact match */
+        int force = (remaining <= 2) ? 1 : 0;
+        int idx = sample_word(remaining, force, target_lang, ghost_lang, ghost_used);
+        if (idx < 0) break;
+
+        line->words[line->count++] = idx;
+        line->syllables += vocab[idx].syllables;
+        org.acc_mass += vocab[idx].mass;
+
+        /* update state */
+        if (org.last_word >= 0)
+            hebbian_record(org.last_word, idx);
+        org.last_emotion = vocab[idx].emotion;
+        org.prev_was_adj = vocab[idx].is_adjective;
+        org.last_word = idx;
+        mark_used(idx);
+    }
+}
+
+/* ─── GENERATE ONE HAIKU ────────────────────────────────────────────── */
+
+typedef struct {
+    Line  lines[3];
+    float destiny_after[DESTINY_DIM]; /* destiny state after this haiku */
+    int   has_enjamb;                 /* ends with em-dash */
+} Haiku;
+
+static void generate_haiku(Haiku *h) {
+    static const int target_syl[3] = {5, 7, 5};
+    int tlang = org.current_lang;
+    int glang = ghost_language();
+    /* avoid ghost = same as target */
+    if (glang == tlang) glang = -1;
+    int ghost_used = 0;
+
+    /* if enjambment carry, blend destiny */
+    if (org.enjamb) {
+        for (int d = 0; d < DESTINY_DIM; d++)
+            org.destiny[d] = 0.6f * org.destiny[d] + 0.4f * org.enjamb_destiny[d];
+        vec_normalize(org.destiny, DESTINY_DIM);
+        org.enjamb = 0;
+    }
+
+    /* save destiny before line 1 for line 3 averaging */
+    float dest_before[DESTINY_DIM];
+    memcpy(dest_before, org.destiny, sizeof(dest_before));
+
+    /* line 1: pure target language */
+    generate_line(&h->lines[0], target_syl[0], tlang, -1, NULL);
+
+    float dest_after_l1[DESTINY_DIM];
+    memcpy(dest_after_l1, org.destiny, sizeof(dest_after_l1));
+
+    /* drift destiny slightly */
+    for (int d = 0; d < DESTINY_DIM; d++)
+        org.destiny[d] += (rng_float() - 0.5f) * 0.1f;
+    vec_normalize(org.destiny, DESTINY_DIM);
+
+    /* line 2: ghost voice allowed (one word from ghost language) */
+    generate_line(&h->lines[1], target_syl[1], tlang, glang, &ghost_used);
+
+    float dest_after_l2[DESTINY_DIM];
+    memcpy(dest_after_l2, org.destiny, sizeof(dest_after_l2));
+
+    /* line 3 destiny = average(destiny_after_l1, destiny_after_l2) */
+    for (int d = 0; d < DESTINY_DIM; d++)
+        org.destiny[d] = 0.5f * dest_after_l1[d] + 0.5f * dest_after_l2[d];
+    vec_normalize(org.destiny, DESTINY_DIM);
+
+    /* line 3: pure target language */
+    generate_line(&h->lines[2], target_syl[2], tlang, -1, NULL);
+
+    memcpy(h->destiny_after, org.destiny, sizeof(h->destiny_after));
+
+    /* enjambment check: if julia > 0.3, mark for carry */
+    h->has_enjamb = (org.julia > 0.3f) ? 1 : 0;
+    if (h->has_enjamb) {
+        memcpy(org.enjamb_destiny, h->destiny_after, sizeof(org.enjamb_destiny));
+        org.enjamb = 1;
+    }
+}
+
+/* ─── FORMAT AND PRINT HAIKU ────────────────────────────────────────── */
+
+static int haiku_to_string(const Haiku *h, char *buf, int bufsize) {
+    int pos = 0;
+    for (int ln = 0; ln < 3; ln++) {
+        const Line *line = &h->lines[ln];
+        for (int w = 0; w < line->count; w++) {
+            if (w > 0 && pos < bufsize - 1) buf[pos++] = ' ';
+            int idx = line->words[w];
+            const char *text = vocab[idx].text;
+            int len = (int)strlen(text);
+            if (pos + len < bufsize) {
+                memcpy(buf + pos, text, (size_t)len);
+                pos += len;
+            }
+        }
+        /* enjambment dash on last line */
+        if (ln == 2 && h->has_enjamb && pos + 2 < bufsize) {
+            buf[pos++] = ' ';
+            buf[pos++] = '-';
+            buf[pos++] = '-';
+        }
+        if (ln < 2 && pos < bufsize - 1) buf[pos++] = '\n';
+    }
+    if (pos < bufsize) buf[pos] = '\0';
+    return pos;
+}
+
+static void print_haiku_colored(const Haiku *h) {
+    for (int ln = 0; ln < 3; ln++) {
+        const Line *line = &h->lines[ln];
+        printf("  ");
+        for (int w = 0; w < line->count; w++) {
+            if (w > 0) printf(" ");
+            int idx = line->words[w];
+            int emo = vocab[idx].emotion;
+            printf("%s%s%s", emo_color[emo], vocab[idx].text, ANSI_RESET);
+        }
+        if (ln == 2 && h->has_enjamb) {
+            printf(" %s--%s", ANSI_DIM, ANSI_RESET);
+        }
+        printf("\n");
+    }
+}
+
+/* ─── BETWEEN-HAIKU UPDATES ─────────────────────────────────────────── */
+
+static void inter_haiku_update(void) {
+    /* chambers step */
+    chambers_step(&org.chambers, 0.3f);
+
+    /* julia grows */
+    org.julia += 0.08f + rng_float() * 0.05f;
+    if (org.julia > 1.0f) org.julia = 1.0f;
+
+    /* destiny drift from exhale */
+    int frag = (int)(rng_next() % EXHALE_COUNT);
+    for (int d = 0; d < DESTINY_DIM; d++)
+        org.destiny[d] += exhale[frag].destiny[d] * 0.05f;
+    vec_normalize(org.destiny, DESTINY_DIM);
+
+    /* metaweight mutation */
+    org.alpha   += (rng_float() - 0.5f) * 0.02f;
+    org.beta    += (rng_float() - 0.5f) * 0.02f;
+    org.gamma_w += (rng_float() - 0.5f) * 0.02f;
+    org.trauma_w += (rng_float() - 0.5f) * 0.02f;
+    if (org.alpha < 0.0f) org.alpha = 0.0f;
+    if (org.beta  < 0.0f) org.beta  = 0.0f;
+    if (org.gamma_w < 0.0f) org.gamma_w = 0.0f;
+    if (org.trauma_w < 0.0f) org.trauma_w = 0.0f;
+
+    /* temperature modulation */
+    org.tau = TAU_BASE + org.julia * 0.3f - org.planet_diss * 0.2f;
+    if (org.tau < 0.5f) org.tau = 0.5f;
+    if (org.tau > 2.5f) org.tau = 2.5f;
+
+    /* velocity shift */
+    float v_roll = rng_float();
+    if (v_roll < 0.1f)      org.velocity = VEL_STOP;
+    else if (v_roll < 0.2f) org.velocity = VEL_BREATHE;
+    else if (v_roll < 0.35f) org.velocity = VEL_RUN;
+    else if (v_roll < 0.45f) org.velocity = VEL_UP;
+    else if (v_roll < 0.55f) org.velocity = VEL_DOWN;
+    else                     org.velocity = VEL_WALK;
+}
+
+/* ─── CYCLE STOP PROBABILITY ────────────────────────────────────────── */
+
+static int should_stop_cycle(void) {
+    if (org.haiku_in_cycle >= MAX_CYCLE_HAIKU) return 1; /* shabbat */
+    float saturation = (float)org.haiku_in_cycle / (float)MAX_CYCLE_HAIKU;
+    float x = org.acc_mass * 0.3f + saturation * 0.4f +
+              org.planet_diss * 0.3f - 2.0f;
+    float prob = sigmoid(x);
+    return rng_float() < prob;
+}
+
+/* ─── DISPLAY CYCLE INFO ────────────────────────────────────────────── */
+
+static const char *season_names[4] = {"spring", "summer", "autumn", "winter"};
+static const char *vel_names[VEL_COUNT] = {
+    "WALK", "RUN", "STOP", "BREATHE", "UP", "DOWN"
+};
+
+static void print_cycle_header(int cycle_num) {
+    printf("\n%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n",
+           ANSI_DIM, ANSI_RESET);
+    printf("%scycle %d%s", ANSI_BOLD, cycle_num, ANSI_RESET);
+    printf("  %s· %s ·%s", ANSI_DIM, season_names[org.season], ANSI_RESET);
+    printf("  %splanet %.2f%s", ANSI_DIM, org.planet_diss, ANSI_RESET);
+    printf("  %scalendar %.2f%s\n", ANSI_DIM, org.cal_diss, ANSI_RESET);
+}
+
+static void print_haiku_header(int haiku_num) {
+    printf("\n  %s[%d]%s", ANSI_DIM, haiku_num, ANSI_RESET);
+    printf("  %sjulia=%.2f%s", emo_color[EMO_JULIA], org.julia, ANSI_RESET);
+    printf("  %sτ=%.2f%s", ANSI_DIM, org.tau, ANSI_RESET);
+    printf("  %s%s%s\n", ANSI_DIM, vel_names[org.velocity], ANSI_RESET);
+}
+
+static void print_chambers(void) {
+    printf("  %schambers:%s ", ANSI_DIM, ANSI_RESET);
+    for (int i = 0; i < CH_COUNT; i++) {
+        float a = chamber_activation(&org.chambers, i);
+        const char *col = a > 0.3f ? "\033[97m" : (a < -0.3f ? "\033[90m" : "\033[37m");
+        static const char ch_short[CH_COUNT] = {'F','L','R','V','W','X'};
+        printf("%s%c%.1f%s ", col, ch_short[i], a, ANSI_RESET);
+    }
+    printf("\n");
+}
+
+static void print_cycle_footer(int haiku_count) {
+    printf("\n  %s%d haiku · mass %.1f · julia %.2f%s\n",
+           ANSI_DIM, haiku_count, org.acc_mass, org.julia, ANSI_RESET);
+    printf("%s━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n",
+           ANSI_DIM, ANSI_RESET);
+}
+
+/* ─── GENERATE ONE FULL CYCLE ───────────────────────────────────────── */
+
+static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
+    cycle_reset();
+    int out_pos = 0;
+
+    print_cycle_header(cycle_num);
+    print_chambers();
+
+    do {
+        org.haiku_in_cycle++;
+
+        print_haiku_header(org.haiku_in_cycle);
+
+        Haiku h;
+        memset(&h, 0, sizeof(h));
+        generate_haiku(&h);
+        print_haiku_colored(&h);
+
+        /* write to buffer for web mode */
+        if (out_buf && out_pos < out_bufsize - 256) {
+            char tmp[512];
+            int len = haiku_to_string(&h, tmp, (int)sizeof(tmp));
+            if (out_pos + len + 2 < out_bufsize) {
+                if (out_pos > 0) { out_buf[out_pos++] = '\n'; out_buf[out_pos++] = '\n'; }
+                memcpy(out_buf + out_pos, tmp, (size_t)len);
+                out_pos += len;
+            }
+        }
+
+        if (should_stop_cycle()) break;
+
+        inter_haiku_update();
+
+    } while (1);
+
+    if (out_buf && out_pos < out_bufsize) out_buf[out_pos] = '\0';
+
+    print_cycle_footer(org.haiku_in_cycle);
+    return org.haiku_in_cycle;
+}
+
+/* ─── BANNER ────────────────────────────────────────────────────────── */
+
+static void print_banner(void) {
+    printf("%s\n", ANSI_DIM);
+    printf("  ██████╗ ██████╗  ██████╗ ██████╗ ███████╗██╗  ██╗██╗   ██╗\n");
+    printf("  ██╔══██╗██╔══██╗██╔═══██╗██╔══██╗██╔════╝██║ ██╔╝╚██╗ ██╔╝\n");
+    printf("  ██████╔╝██████╔╝██║   ██║██║  ██║███████╗█████╔╝  ╚████╔╝ \n");
+    printf("  ██╔══██╗██╔══██╗██║   ██║██║  ██║╚════██║██╔═██╗   ╚██╔╝  \n");
+    printf("  ██████╔╝██║  ██║╚██████╔╝██████╔╝███████║██║  ██╗   ██║   \n");
+    printf("  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   \n");
+    printf("%s\n", ANSI_RESET);
+    printf("  %sa poetic organism%s\n", ANSI_DIM, ANSI_RESET);
+    printf("  %svocab: %d words · %d languages · chambers: %d · emotions: %d%s\n",
+           ANSI_DIM, vocab_size, LANG_COUNT, CH_COUNT, EMO_COUNT, ANSI_RESET);
+    printf("  %splanet: %.3f · calendar: %.3f · season: %s%s\n",
+           ANSI_DIM, org.planet_diss, org.cal_diss,
+           season_names[org.season], ANSI_RESET);
+    printf("\n");
+}
+
+/* ─── REPL MODE ─────────────────────────────────────────────────────── */
+
+static void repl(void) {
+    print_banner();
+    int cycle_num = 0;
+    char input[256];
+
+    while (1) {
+        printf("\n%sbrodsky>%s ", ANSI_BOLD, ANSI_RESET);
+        fflush(stdout);
+
+        if (!fgets(input, (int)sizeof(input), stdin)) break;
+
+        /* strip newline */
+        int len = (int)strlen(input);
+        while (len > 0 && (input[len-1] == '\n' || input[len-1] == '\r'))
+            input[--len] = '\0';
+
+        if (len == 0) {
+            /* empty enter = generate one cycle */
+            cycle_num++;
+            rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+            generate_cycle(cycle_num, NULL, 0);
+            continue;
+        }
+
+        if (strcmp(input, "q") == 0 || strcmp(input, "quit") == 0 ||
+            strcmp(input, "exit") == 0) {
+            printf("\n  %s\"what gets left of a man amounts to a part.%s\n",
+                   ANSI_DIM, ANSI_RESET);
+            printf("  %s to his spoken part. to a part of speech.\"%s\n\n",
+                   ANSI_DIM, ANSI_RESET);
+            break;
+        }
+
+        if (strcmp(input, "help") == 0 || strcmp(input, "?") == 0) {
+            printf("\n  %scommands:%s\n", ANSI_DIM, ANSI_RESET);
+            printf("  [enter]      generate a cycle (1-7 haiku)\n");
+            printf("  seed <N>     set RNG seed\n");
+            printf("  tau <F>      set temperature\n");
+            printf("  julia <F>    set julia field\n");
+            printf("  chambers     show chamber state\n");
+            printf("  vocab        show vocabulary stats\n");
+            printf("  destiny      show destiny vector\n");
+            printf("  exhale       show exhale fragments\n");
+            printf("  N            generate N cycles\n");
+            printf("  q/quit       exit\n");
+            continue;
+        }
+
+        if (strncmp(input, "seed ", 5) == 0) {
+            unsigned long s = strtoul(input + 5, NULL, 10);
+            rng_seed(s);
+            printf("  seed = %lu\n", s);
+            continue;
+        }
+
+        if (strncmp(input, "tau ", 4) == 0) {
+            org.tau = strtof(input + 4, NULL);
+            printf("  τ = %.2f\n", org.tau);
+            continue;
+        }
+
+        if (strncmp(input, "julia ", 6) == 0) {
+            org.julia = strtof(input + 6, NULL);
+            printf("  julia = %.2f\n", org.julia);
+            continue;
+        }
+
+        if (strcmp(input, "chambers") == 0) {
+            print_chambers();
+            for (int i = 0; i < CH_COUNT; i++) {
+                printf("  %s: phase=%.2f freq=%.2f act=%.2f\n",
+                       ch_names[i], org.chambers.phase[i],
+                       org.chambers.freq[i],
+                       chamber_activation(&org.chambers, i));
+            }
+            continue;
+        }
+
+        if (strcmp(input, "vocab") == 0) {
+            int emo_counts[EMO_COUNT];
+            int lang_counts[LANG_COUNT];
+            memset(emo_counts, 0, sizeof(emo_counts));
+            memset(lang_counts, 0, sizeof(lang_counts));
+            float total_mass = 0.0f;
+            for (int i = 0; i < vocab_size; i++) {
+                emo_counts[vocab[i].emotion]++;
+                if (vocab[i].lang >= 0 && vocab[i].lang < LANG_COUNT)
+                    lang_counts[vocab[i].lang]++;
+                total_mass += vocab[i].mass;
+            }
+            printf("  %s%d words, avg mass %.2f%s\n",
+                   ANSI_DIM, vocab_size, total_mass / (float)vocab_size, ANSI_RESET);
+            printf("  %slanguages:%s", ANSI_DIM, ANSI_RESET);
+            for (int l = 0; l < LANG_COUNT; l++)
+                printf(" %s=%d", lang_names[l], lang_counts[l]);
+            printf("\n");
+            for (int e = 0; e < EMO_COUNT; e++) {
+                printf("  %s%-11s %3d%s\n",
+                       emo_color[e], emo_names[e], emo_counts[e], ANSI_RESET);
+            }
+            continue;
+        }
+
+        if (strcmp(input, "destiny") == 0) {
+            printf("  destiny: [");
+            for (int d = 0; d < DESTINY_DIM; d++)
+                printf("%.2f%s", org.destiny[d], d < DESTINY_DIM-1 ? ", " : "");
+            printf("]\n");
+            continue;
+        }
+
+        if (strcmp(input, "exhale") == 0) {
+            for (int i = 0; i < EXHALE_COUNT; i++)
+                printf("  %s\"%s\"%s\n", ANSI_DIM, exhale[i].text, ANSI_RESET);
+            continue;
+        }
+
+        /* try to parse as number of cycles */
+        int n = atoi(input);
+        if (n > 0 && n <= 100) {
+            for (int i = 0; i < n; i++) {
+                cycle_num++;
+                rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+                generate_cycle(cycle_num, NULL, 0);
+            }
+            continue;
+        }
+
+        /* not a command — treat as prompt */
+        float diss = ingest_prompt(input);
+        printf("  %sdissonance: %.2f · lang: %s%s\n",
+               ANSI_DIM, diss, lang_names[org.current_lang], ANSI_RESET);
+        cycle_num++;
+        generate_cycle(cycle_num, NULL, 0);
+    }
+}
+
+/* ─── WEB MODE (simple HTTP server) ─────────────────────────────────── */
+
+#if defined(__unix__) || defined(__APPLE__)
+
+static const char *html_template_head =
+    "HTTP/1.1 200 OK\r\n"
+    "Content-Type: text/html; charset=utf-8\r\n"
+    "Connection: close\r\n"
+    "Access-Control-Allow-Origin: *\r\n"
+    "\r\n"
+    "<!DOCTYPE html><html><head>"
+    "<meta charset='utf-8'>"
+    "<title>BRODSKY</title>"
+    "<style>"
+    "body{background:#0a0a0a;color:#aaa;font-family:'Courier New',monospace;"
+    "max-width:640px;margin:80px auto;padding:20px;}"
+    "h1{color:#555;font-size:14px;letter-spacing:8px;text-transform:uppercase;}"
+    ".haiku{margin:30px 0;line-height:1.8;}"
+    ".haiku .line{display:block;}"
+    ".trauma{color:#c44;}.joy{color:#cc8;}.grief{color:#68c;}"
+    ".resonance{color:#6cc;}.desire{color:#c6c;}.void{color:#666;}"
+    ".rage{color:#e66;}.tenderness{color:#6a6;}.julia{color:#c8f;}"
+    ".meta{color:#444;font-size:11px;margin-top:40px;}"
+    ".dash{color:#555;}"
+    "a{color:#555;text-decoration:none;border-bottom:1px solid #333;}"
+    "a:hover{color:#888;}"
+    "</style></head><body>"
+    "<h1>BRODSKY</h1>";
+
+static const char *html_template_tail =
+    "<div class='meta'>"
+    "<a href='/'>generate again</a>"
+    "</div></body></html>";
+
+static const char *emo_class[EMO_COUNT] = {
+    "trauma", "joy", "grief", "resonance",
+    "desire", "void", "rage", "tenderness", "julia"
+};
+
+static int haiku_to_html(const Haiku *h, char *buf, int bufsize) {
+    int pos = 0;
+    pos += snprintf(buf + pos, (size_t)(bufsize - pos), "<div class='haiku'>");
+    for (int ln = 0; ln < 3; ln++) {
+        const Line *line = &h->lines[ln];
+        pos += snprintf(buf + pos, (size_t)(bufsize - pos), "<span class='line'>");
+        for (int w = 0; w < line->count; w++) {
+            if (w > 0) pos += snprintf(buf + pos, (size_t)(bufsize - pos), " ");
+            int idx = line->words[w];
+            int emo = vocab[idx].emotion;
+            pos += snprintf(buf + pos, (size_t)(bufsize - pos),
+                           "<span class='%s'>%s</span>",
+                           emo_class[emo], vocab[idx].text);
+        }
+        if (ln == 2 && h->has_enjamb) {
+            pos += snprintf(buf + pos, (size_t)(bufsize - pos),
+                           " <span class='dash'>&mdash;</span>");
+        }
+        pos += snprintf(buf + pos, (size_t)(bufsize - pos), "</span>");
+    }
+    pos += snprintf(buf + pos, (size_t)(bufsize - pos), "</div>");
+    return pos;
+}
+
+static void web_serve(void) {
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) { perror("socket"); return; }
+
+    int opt = 1;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(WEB_PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        perror("bind");
+        close(server_fd);
+        return;
+    }
+
+    if (listen(server_fd, 5) < 0) {
+        perror("listen");
+        close(server_fd);
+        return;
+    }
+
+    printf("brodsky listening on http://localhost:%d\n", WEB_PORT);
+
+    int cycle_num = 0;
+
+    while (1) {
+        struct sockaddr_in client_addr;
+        socklen_t client_len = sizeof(client_addr);
+        int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
+        if (client_fd < 0) continue;
+
+        /* read request (we don't care about it much) */
+        char req[2048];
+        ssize_t nr = read(client_fd, req, sizeof(req) - 1);
+        if (nr > 0) req[nr] = '\0';
+        else req[0] = '\0';
+
+        /* check for favicon to skip */
+        if (strstr(req, "favicon")) {
+            const char *r404 = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+            write(client_fd, r404, strlen(r404));
+            close(client_fd);
+            continue;
+        }
+
+        /* generate a cycle */
+        cycle_num++;
+        rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+        cycle_reset();
+
+        char response[16384];
+        int rpos = 0;
+
+        /* head */
+        int hlen = (int)strlen(html_template_head);
+        memcpy(response + rpos, html_template_head, (size_t)hlen);
+        rpos += hlen;
+
+        /* cycle info */
+        rpos += snprintf(response + rpos, (size_t)(sizeof(response) - (size_t)rpos),
+                        "<div class='meta'>cycle %d &middot; %s &middot; "
+                        "planet %.2f &middot; julia %.2f</div>",
+                        cycle_num, season_names[org.season],
+                        org.planet_diss, org.julia);
+
+        /* generate haiku */
+        do {
+            org.haiku_in_cycle++;
+
+            Haiku h;
+            memset(&h, 0, sizeof(h));
+            generate_haiku(&h);
+
+            rpos += haiku_to_html(&h, response + rpos,
+                                  (int)(sizeof(response) - (size_t)rpos));
+
+            if (should_stop_cycle()) break;
+            inter_haiku_update();
+        } while (1);
+
+        /* also print to terminal */
+        printf("[web] cycle %d: %d haiku, mass %.1f, julia %.2f\n",
+               cycle_num, org.haiku_in_cycle, org.acc_mass, org.julia);
+
+        /* tail */
+        int tlen = (int)strlen(html_template_tail);
+        if (rpos + tlen < (int)sizeof(response)) {
+            memcpy(response + rpos, html_template_tail, (size_t)tlen);
+            rpos += tlen;
+        }
+
+        write(client_fd, response, (size_t)rpos);
+        close(client_fd);
+    }
+}
+
+#endif /* unix/apple */
+
+/* ─── MAIN ──────────────────────────────────────────────────────────── */
+
+int main(int argc, char **argv) {
+    rng_seed((unsigned long)time(NULL));
+    load_vocabulary();
+    organism_init();
+
+    int web_mode = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--web") == 0) web_mode = 1;
+        else if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
+            rng_seed(strtoul(argv[++i], NULL, 10));
+        }
+    }
+
+#if defined(__unix__) || defined(__APPLE__)
+    if (web_mode) {
+        signal(SIGPIPE, SIG_IGN);
+        web_serve();
+        return 0;
+    }
+#else
+    (void)web_mode;
+#endif
+
+    repl();
+    return 0;
+}
