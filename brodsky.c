@@ -17,8 +17,12 @@
  *
  * Architecture: haiku.c lineage, extended with Julia field and
  *               Brodsky-specific mechanics (enjambment, mass, greed).
- *
- * All code by Oleg Ataev. 2026.
+ * In memory of Joseph Brodsky (1940-1996)*
+ * Yet until brown clay has been crammed down my larynx,
+ * only gratitude will be gushing from it.
+
+ -- Joseph Brodsky, "May 24, 1980"
+ * Ariana Method. 2026.
  */
 
 #include <stdio.h>
