@@ -307,6 +307,39 @@ static int detect_language(const char *text) {
         return LANG_ES;
     if (french > 0)
         return LANG_FR;
+
+    /* Fallback: no diacritics found. Check words against each language's vocab. */
+    if (hebrew == 0 && cyrillic == 0 && french == 0 && spanish == 0) {
+        int lang_hits[LANG_COUNT];
+        memset(lang_hits, 0, sizeof(lang_hits));
+        char buf[64]; int bi = 0;
+        const char *q = text;
+        for (;; q++) {
+            unsigned char ch = (unsigned char)*q;
+            if (ch && ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))) {
+                if (bi < 62) buf[bi++] = (char)tolower(ch);
+            } else {
+                if (bi > 0) {
+                    buf[bi] = '\0';
+                    for (int i = 0; i < vocab_size; i++) {
+                        if (strcmp(vocab[i].text, buf) == 0)
+                            lang_hits[vocab[i].lang]++;
+                    }
+                    bi = 0;
+                }
+                if (!*q) break;
+            }
+        }
+        int best = LANG_EN, best_score = lang_hits[LANG_EN];
+        for (int l = 1; l < LANG_COUNT; l++) {
+            if (lang_hits[l] > best_score) {
+                best_score = lang_hits[l];
+                best = l;
+            }
+        }
+        return best;
+    }
+
     return LANG_EN;
 }
 
@@ -791,6 +824,85 @@ static int is_used(int idx) {
     return 0;
 }
 
+/* ─── SEMANTIC TENSION — word pairs that create artistic voltage ────── */
+/*
+ * "skull" + "cathedral" = the cathedral is a skull of god
+ * "empire" + "vertebra" = the spine of the state
+ * "exile" + "lagoon" = Venice, the city of exiles
+ * These pairs boost each other when adjacent. Not bigrams —
+ * tension. The reader fills the gap between them.
+ */
+
+typedef struct { const char *a, *b; float tension; } TensionPair;
+
+static const TensionPair tensions[] = {
+    /* architecture × body */
+    {"skull",       "cathedral",    0.8f},
+    {"vertebra",    "empire",       0.7f},
+    {"spine",       "colonnade",    0.7f},
+    {"ribcage",     "cathedral",    0.6f},
+    {"larynx",      "corridor",     0.6f},
+    {"diaphragm",   "amphitheater", 0.6f},
+    {"sternum",     "facade",       0.5f},
+    {"collarbone",  "balustrade",   0.6f},
+    /* exile × water (Venice) */
+    {"exile",       "lagoon",       0.8f},
+    {"exile",       "canal",        0.7f},
+    {"departure",   "gondola",      0.7f},
+    {"passport",    "watermark",    0.8f},
+    {"border",      "tide",         0.6f},
+    {"displacement","current",      0.6f},
+    /* time × material */
+    {"epoch",       "dust",         0.7f},
+    {"antiquity",   "rust",         0.7f},
+    {"millennium",  "ash",          0.6f},
+    {"eternity",    "salt",         0.7f},
+    {"hourglass",   "bone",         0.6f},
+    {"calendar",    "erosion",      0.5f},
+    /* geometry × void */
+    {"perpendicular","nowhere",     0.7f},
+    {"asymptote",   "never",        0.8f},
+    {"parallel",    "exile",        0.7f},
+    {"intersection","death",        0.6f},
+    {"circumference","nothing",     0.6f},
+    {"tangent",     "departure",    0.6f},
+    /* language × destruction */
+    {"consonant",   "annihilation", 0.7f},
+    {"syllable",    "hemorrhage",   0.6f},
+    {"vowel",       "extinction",   0.5f},
+    {"manuscript",  "ash",          0.8f},
+    {"typewriter",  "skull",        0.7f},
+    {"translation", "exile",        0.8f},
+    {"apostrophe",  "wound",        0.6f},
+    /* domestic × cosmic */
+    {"windowsill",  "constellation",0.8f},
+    {"radiator",    "eternity",     0.7f},
+    {"wallpaper",   "infinity",     0.7f},
+    {"staircase",   "abyss",        0.6f},
+    {"ceiling",     "hemisphere",   0.6f},
+    {"mattress",    "tundra",       0.6f},
+    {"corridor",    "meridian",     0.7f},
+    /* nature × empire */
+    {"permafrost",  "bureaucracy",  0.7f},
+    {"glacier",     "surveillance", 0.6f},
+    {"fog",         "empire",       0.6f},
+    {"birch",       "exile",        0.7f},
+    {"moss",        "marble",       0.6f},
+    {NULL, NULL, 0}
+};
+
+static float tension_score(int last_idx, int cand_idx) {
+    if (last_idx < 0) return 0.0f;
+    const char *last = vocab[last_idx].text;
+    const char *cand = vocab[cand_idx].text;
+    for (int i = 0; tensions[i].a; i++) {
+        if ((strcmp(last, tensions[i].a) == 0 && strcmp(cand, tensions[i].b) == 0) ||
+            (strcmp(last, tensions[i].b) == 0 && strcmp(cand, tensions[i].a) == 0))
+            return tensions[i].tension;
+    }
+    return 0.0f;
+}
+
 /* ─── SCORE A CANDIDATE WORD (Dario equation) ──────────────────────── */
 
 static float score_word(int idx) {
@@ -837,6 +949,11 @@ static float score_word(int idx) {
     /* Julia emotion bonus */
     if (w->emotion == EMO_JULIA)
         score += org.julia * 0.3f;
+
+    /* Semantic tension — artistic voltage between adjacent words */
+    float tens = tension_score(org.last_word, idx);
+    if (tens > 0.0f)
+        score += tens * 2.0f;   /* strong pull — tension pairs override most signals */
 
     return score;
 }
