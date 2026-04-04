@@ -15,99 +15,136 @@
 
 ## The Poems
 
-### "exile"
+### "death"
 
 ```
-infinity
-glacier contaminate death
-disintegrate wool
+mire crystallize skull
+aqueduct vinegar rime
+thorn minaret death
 
-reverberate skull
-requiem stupeur exile
-translation membrane
+intersection spine
+simultaneity gust
+cathedral empire
 
-confiscate pelvis
-metamorphosis empire
-vertebra submerge --
-```
-
-### "skull cathedral"
-
-```
-nominative skull
-accelerate parallel
-telephone larynx
-
-trachea gargoyle
-metamorphosis ulna
-amphitheater --
-
-aqueduct empire
-exhaler parenthesis
-liturgy gangrene --
+aphasic exile
+vitrine conscription elsewhere
+diagonal flinch --
 ```
 
 ### "love"
 
 ```
-cartography death
-transubstantiate gangrene
-intersection skull
+metamorphosis
+enfer illuminate death
+bereavement pelvis
 
-accelerate through
-esophagus veuve empire
-mausoleum bone
+horizon sternum
+bannissement cobblestone gaze
+propaganda skull --
+
+gondola taiga
+undertow oxygen brine
+thermodynamics --
 ```
 
-### "империя и ничто"
+### "exile"
 
 ```
-колоннада смерть
-накапливаться собор
-отсутствие кость
+infinity
+lightbulb adjudicate death
+nominative clang
 
-галлюцинация
-империя разлука
-балюстрада пыль
+impenetrable
+sovereignty cartilage
+meridian brine
 
-перила невод
-неподвижность коридор
-промозглость вползать --
+curettage ribcage
+cathedral hemorrhaging
+grope immovable --
 
-понапрасну прах
-окаменелость валун
-скрежет фонтан соль --
-
-разлагаться сквозь
-изгнание оттепель
-равнодушие гарь --
+asbestos nothing
+blanchisseuse aphasic wrench
+brittle placenta --
 ```
 
-### "גלות ומוות"
+### "тоска"
 
 ```
-לוח שנה תוגה
-anéantir מגפה
-תשובה בית מוות
+пьедестал вскрыть смерть
+грудина corniche копоть
+громыхание
+
+архипелаг гнить
+тире бесплодие тромб
+молчание сквозь --
+
+империя мыс
+окаменеть colonne хлыст
+плацента вздрогнуть --
+
+отечество пирс
+мертворождение излом
+ампутировать --
 ```
 
-### "skull cathedral empire exile"
+### "ничто"
 
 ```
-  [1]  julia=0.00
-  infinity
-  undertow bereavement death
-  surrender remorse
+асфальт впрочем лязг
+ольха confiture чрево
+кровоизлияние
 
-  [2]  julia=0.12
-  antimatter skull
-  radiateur sarcophagus
-  enjambment exile
+испаряться сквозь
+империя стервятник
+грудь утроба смерть
+```
 
-  [3]  julia=0.25
-  wool disintegrate
-  sovereignty vector spine
-  desolation when
+### "גלות"
+
+```
+גלות חלמיש מוות
+פרבולה גרניט friche
+ירושלים --
+```
+
+### "soledad"
+
+```
+góndola hambre
+multiplicar fiebre rien
+manuscrito cal --
+
+sucumbir patria
+caliza côte víscera
+ondular muerte --
+```
+
+### "néant"
+
+```
+anéantissement
+mélancolie cauchemar temps
+syntaxe bannissement
+
+aéroplane ivresse
+exil damnation cratère
+photographie crâne --
+```
+
+### "skull cathedral"
+
+```
+penmanship galosh
+conflagration marronnage
+disintegrate slag
+
+redaction ribcage
+cathedral diagnose death
+esophagus skull --
+
+administer scum
+interrogate slack exile
+samovar sternum --
 ```
 
 ---
