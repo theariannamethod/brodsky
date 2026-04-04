@@ -1068,62 +1068,333 @@ typedef struct {
     float tension;       /* current strength — decays with use */
     int   use_count;     /* how many times used in generation */
     int   crystallized;  /* 1 = SuperToken formed */
+    int   lang;          /* LANG_EN..LANG_ES — which language's poetic tradition */
 } TensionPair;
 
 static TensionPair tensions[] = {
-    /* architecture × body */
-    {"skull",       "cathedral",    0.8f, 0, 0},
-    {"vertebra",    "empire",       0.7f, 0, 0},
-    {"spine",       "colonnade",    0.7f, 0, 0},
-    {"ribcage",     "cathedral",    0.6f, 0, 0},
-    {"larynx",      "corridor",     0.6f, 0, 0},
-    {"diaphragm",   "amphitheater", 0.6f, 0, 0},
-    {"sternum",     "facade",       0.5f, 0, 0},
-    {"collarbone",  "balustrade",   0.6f, 0, 0},
-    /* exile × water (Venice) */
-    {"exile",       "lagoon",       0.8f, 0, 0},
-    {"exile",       "canal",        0.7f, 0, 0},
-    {"departure",   "gondola",      0.7f, 0, 0},
-    {"passport",    "watermark",    0.8f, 0, 0},
-    {"border",      "tide",         0.6f, 0, 0},
-    {"displacement","current",      0.6f, 0, 0},
-    /* time × material */
-    {"epoch",       "dust",         0.7f, 0, 0},
-    {"antiquity",   "rust",         0.7f, 0, 0},
-    {"millennium",  "ash",          0.6f, 0, 0},
-    {"eternity",    "salt",         0.7f, 0, 0},
-    {"hourglass",   "bone",         0.6f, 0, 0},
-    {"calendar",    "erosion",      0.5f, 0, 0},
-    /* geometry × void */
-    {"perpendicular","nowhere",     0.7f, 0, 0},
-    {"asymptote",   "never",        0.8f, 0, 0},
-    {"parallel",    "exile",        0.7f, 0, 0},
-    {"intersection","death",        0.6f, 0, 0},
-    {"circumference","nothing",     0.6f, 0, 0},
-    {"tangent",     "departure",    0.6f, 0, 0},
-    /* language × destruction */
-    {"consonant",   "annihilation", 0.7f, 0, 0},
-    {"syllable",    "hemorrhage",   0.6f, 0, 0},
-    {"vowel",       "extinction",   0.5f, 0, 0},
-    {"manuscript",  "ash",          0.8f, 0, 0},
-    {"typewriter",  "skull",        0.7f, 0, 0},
-    {"translation", "exile",        0.8f, 0, 0},
-    {"apostrophe",  "wound",        0.6f, 0, 0},
-    /* domestic × cosmic */
-    {"windowsill",  "constellation",0.8f, 0, 0},
-    {"radiator",    "eternity",     0.7f, 0, 0},
-    {"wallpaper",   "infinity",     0.7f, 0, 0},
-    {"staircase",   "abyss",        0.6f, 0, 0},
-    {"ceiling",     "hemisphere",   0.6f, 0, 0},
-    {"mattress",    "tundra",       0.6f, 0, 0},
-    {"corridor",    "meridian",     0.7f, 0, 0},
-    /* nature × empire */
-    {"permafrost",  "bureaucracy",  0.7f, 0, 0},
-    {"glacier",     "surveillance", 0.6f, 0, 0},
-    {"fog",         "empire",       0.6f, 0, 0},
-    {"birch",       "exile",        0.7f, 0, 0},
-    {"moss",        "marble",       0.6f, 0, 0},
-    {NULL, NULL, 0, 0, 0}
+
+    /* ═══════════════════════════════════════════════════════════════════
+     *  ENGLISH (~55 pairs)
+     *  Brodsky's anglophone register: body×architecture, exile×water,
+     *  time×material, geometry×void, language×destruction, domestic×cosmic
+     * ═══════════════════════════════════════════════════════════════════ */
+
+    /* EN: architecture × body */
+    {"skull",          "cathedral",     0.8f, 0, 0, LANG_EN},
+    {"vertebra",       "empire",        0.7f, 0, 0, LANG_EN},
+    {"spine",          "colonnade",     0.7f, 0, 0, LANG_EN},
+    {"ribcage",        "cathedral",     0.6f, 0, 0, LANG_EN},
+    {"larynx",         "corridor",      0.6f, 0, 0, LANG_EN},
+    {"diaphragm",      "amphitheater",  0.6f, 0, 0, LANG_EN},
+    {"sternum",        "facade",        0.5f, 0, 0, LANG_EN},
+    {"collarbone",     "balustrade",    0.6f, 0, 0, LANG_EN},
+    {"synapse",        "cathedral",     0.7f, 0, 0, LANG_EN},  /* neural architecture */
+    {"cochlea",        "empire",        0.7f, 0, 0, LANG_EN},  /* the inner ear of the state */
+    {"scapula",        "buttress",      0.6f, 0, 0, LANG_EN},
+    {"pelvis",         "rotunda",       0.5f, 0, 0, LANG_EN},
+    {"femur",          "obelisk",       0.6f, 0, 0, LANG_EN},
+    /* EN: exile × water (Venice) */
+    {"exile",          "lagoon",        0.8f, 0, 0, LANG_EN},
+    {"exile",          "canal",         0.7f, 0, 0, LANG_EN},
+    {"departure",      "gondola",       0.7f, 0, 0, LANG_EN},
+    {"passport",       "watermark",     0.8f, 0, 0, LANG_EN},
+    {"border",         "tide",          0.6f, 0, 0, LANG_EN},
+    {"displacement",   "current",       0.6f, 0, 0, LANG_EN},
+    {"banishment",     "undertow",      0.7f, 0, 0, LANG_EN},
+    {"statelessness",  "bilge",         0.6f, 0, 0, LANG_EN},
+    /* EN: time × material */
+    {"epoch",          "dust",          0.7f, 0, 0, LANG_EN},
+    {"antiquity",      "rust",          0.7f, 0, 0, LANG_EN},
+    {"millennium",     "ash",           0.6f, 0, 0, LANG_EN},
+    {"eternity",       "salt",          0.7f, 0, 0, LANG_EN},
+    {"hourglass",      "bone",          0.6f, 0, 0, LANG_EN},
+    {"calendar",       "erosion",       0.5f, 0, 0, LANG_EN},
+    {"pendulum",       "basalt",        0.6f, 0, 0, LANG_EN},
+    {"senescence",     "limestone",     0.5f, 0, 0, LANG_EN},
+    /* EN: geometry × void */
+    {"perpendicular",  "nowhere",       0.7f, 0, 0, LANG_EN},
+    {"asymptote",      "never",         0.8f, 0, 0, LANG_EN},
+    {"parallel",       "exile",         0.7f, 0, 0, LANG_EN},
+    {"intersection",   "death",         0.6f, 0, 0, LANG_EN},
+    {"circumference",  "nothing",       0.6f, 0, 0, LANG_EN},
+    {"tangent",        "departure",     0.6f, 0, 0, LANG_EN},
+    {"parabola",       "melancholy",    0.6f, 0, 0, LANG_EN},
+    {"hyperbola",      "nostalgia",     0.5f, 0, 0, LANG_EN},
+    /* EN: language × destruction */
+    {"consonant",      "annihilation",  0.7f, 0, 0, LANG_EN},
+    {"syllable",       "hemorrhage",    0.6f, 0, 0, LANG_EN},
+    {"manuscript",     "ash",           0.8f, 0, 0, LANG_EN},
+    {"typewriter",     "skull",         0.7f, 0, 0, LANG_EN},
+    {"translation",    "exile",         0.8f, 0, 0, LANG_EN},
+    {"stanza",         "sarcophagus",   0.6f, 0, 0, LANG_EN},
+    {"elegy",          "granite",       0.6f, 0, 0, LANG_EN},
+    {"caesura",        "death",         0.7f, 0, 0, LANG_EN},
+    /* EN: domestic × cosmic */
+    {"windowsill",     "constellation", 0.8f, 0, 0, LANG_EN},
+    {"radiator",       "eternity",      0.7f, 0, 0, LANG_EN},
+    {"wallpaper",      "infinity",      0.7f, 0, 0, LANG_EN},
+    {"ceiling",        "hemisphere",    0.6f, 0, 0, LANG_EN},
+    {"mattress",       "tundra",        0.6f, 0, 0, LANG_EN},
+    {"corridor",       "meridian",      0.7f, 0, 0, LANG_EN},
+    {"faucet",         "eternity",      0.7f, 0, 0, LANG_EN},  /* domestic infinite */
+    {"linoleum",       "constellation", 0.7f, 0, 0, LANG_EN},  /* floor as sky */
+    {"ashtray",        "equinox",       0.6f, 0, 0, LANG_EN},
+    {"curtain",        "horizon",       0.6f, 0, 0, LANG_EN},
+    /* EN: nature × empire */
+    {"permafrost",     "bureaucracy",   0.7f, 0, 0, LANG_EN},
+    {"glacier",        "surveillance",  0.6f, 0, 0, LANG_EN},
+    {"fog",            "empire",        0.6f, 0, 0, LANG_EN},
+    {"birch",          "exile",         0.7f, 0, 0, LANG_EN},
+    {"moss",           "marble",        0.6f, 0, 0, LANG_EN},
+    /* EN: body × geography */
+    {"aorta",          "meridian",      0.7f, 0, 0, LANG_EN},  /* body as geography */
+
+    /* ═══════════════════════════════════════════════════════════════════
+     *  RUSSIAN (~50 pairs)
+     *  Бродский на родном: тело×империя, быт×космос, время×материя,
+     *  изгнание×вода, геометрия×небытие, язык×разрушение
+     * ═══════════════════════════════════════════════════════════════════ */
+
+    /* RU: тело × архитектура/империя */
+    {"позвоночник",    "империя",       0.8f, 0, 0, LANG_RU},  /* spine of empire */
+    {"череп",          "собор",         0.8f, 0, 0, LANG_RU},
+    {"гортань",        "колоннада",     0.7f, 0, 0, LANG_RU},  /* larynx × colonnade */
+    {"сухожилие",      "акведук",       0.7f, 0, 0, LANG_RU},  /* tendon × aqueduct */
+    {"диафрагма",      "амфитеатр",     0.6f, 0, 0, LANG_RU},
+    {"грудина",        "фасад",         0.5f, 0, 0, LANG_RU},
+    {"ключица",        "балюстрада",    0.6f, 0, 0, LANG_RU},
+    {"аорта",          "меридиан",      0.7f, 0, 0, LANG_RU},
+    {"лопатка",        "парапет",       0.5f, 0, 0, LANG_RU},
+    {"скелет",         "арка",          0.6f, 0, 0, LANG_RU},
+    {"хрящ",           "гранит",        0.6f, 0, 0, LANG_RU},
+    /* RU: быт × космос */
+    {"подоконник",     "бесконечность", 0.8f, 0, 0, LANG_RU},
+    {"форточка",       "вечность",      0.8f, 0, 0, LANG_RU},  /* ventilation window × eternity */
+    {"батарея",        "тысячелетие",   0.7f, 0, 0, LANG_RU},  /* radiator × millennium */
+    {"половица",       "горизонт",      0.7f, 0, 0, LANG_RU},  /* floorboard × horizon */
+    {"пепельница",     "равноденствие", 0.7f, 0, 0, LANG_RU},  /* ashtray × equinox */
+    {"коридор",        "меридиан",      0.7f, 0, 0, LANG_RU},
+    {"потолок",        "пространство",  0.6f, 0, 0, LANG_RU},
+    {"зеркало",        "бесконечность", 0.7f, 0, 0, LANG_RU},
+    {"штора",          "горизонт",      0.6f, 0, 0, LANG_RU},
+    {"абажур",         "солнцестояние", 0.6f, 0, 0, LANG_RU},
+    /* RU: изгнание × вода */
+    {"изгнание",       "лагуна",        0.8f, 0, 0, LANG_RU},
+    {"изгнание",       "канал",         0.7f, 0, 0, LANG_RU},
+    {"разлука",        "гондола",       0.7f, 0, 0, LANG_RU},
+    {"чужбина",        "течение",       0.7f, 0, 0, LANG_RU},
+    {"граница",        "прилив",        0.6f, 0, 0, LANG_RU},
+    /* RU: время × материя */
+    {"эпоха",          "пыль",          0.7f, 0, 0, LANG_RU},
+    {"античность",     "ржавчина",      0.7f, 0, 0, LANG_RU},
+    {"тысячелетие",    "пепел",         0.6f, 0, 0, LANG_RU},
+    {"вечность",       "соль",          0.7f, 0, 0, LANG_RU},
+    {"маятник",        "кость",         0.6f, 0, 0, LANG_RU},
+    {"столетие",       "воск",          0.5f, 0, 0, LANG_RU},
+    /* RU: геометрия × небытие */
+    {"перпендикуляр",  "нигде",         0.7f, 0, 0, LANG_RU},
+    {"асимптота",      "никогда",       0.8f, 0, 0, LANG_RU},
+    {"параллель",      "изгнание",      0.7f, 0, 0, LANG_RU},
+    {"парабола",       "меланхолия",    0.6f, 0, 0, LANG_RU},
+    {"диагональ",      "смерть",        0.6f, 0, 0, LANG_RU},
+    /* RU: язык × разрушение */
+    {"чернила",        "распад",        0.7f, 0, 0, LANG_RU},  /* ink × decay */
+    {"рукопись",       "пепел",         0.8f, 0, 0, LANG_RU},  /* manuscript × ash */
+    {"согласная",      "уничтожение",   0.7f, 0, 0, LANG_RU},
+    {"слог",           "кровоизлияние", 0.6f, 0, 0, LANG_RU},
+    {"перевод",        "изгнание",      0.8f, 0, 0, LANG_RU},
+    {"рифма",          "эпитафия",      0.6f, 0, 0, LANG_RU},
+    {"строфа",         "мрамор",        0.5f, 0, 0, LANG_RU},
+    {"метафора",       "кость",         0.6f, 0, 0, LANG_RU},
+    /* RU: природа × империя */
+    {"тундра",         "бюрократия",    0.7f, 0, 0, LANG_RU},
+    {"ледник",         "цензура",       0.6f, 0, 0, LANG_RU},
+    {"туман",          "империя",       0.6f, 0, 0, LANG_RU},
+    {"берёза",         "изгнание",      0.7f, 0, 0, LANG_RU},
+    {"мох",            "мрамор",        0.6f, 0, 0, LANG_RU},
+
+    /* ═══════════════════════════════════════════════════════════════════
+     *  HEBREW (~45 pairs)
+     *  Biblical weight meets architectural void. Shoresh as bone.
+     *  Exile is not metaphor in Hebrew — it is history.
+     * ═══════════════════════════════════════════════════════════════════ */
+
+    /* HE: גוף × אדריכלות (body × architecture) */
+    {"גולגולת",        "היכל",          0.8f, 0, 0, LANG_HE},  /* skull × temple */
+    {"עמוד שדרה",      "עמוד",          0.8f, 0, 0, LANG_HE},  /* spine × column — same root */
+    {"סרעפת",          "מבצר",          0.7f, 0, 0, LANG_HE},  /* diaphragm × fortress */
+    {"גרון",           "פרוזדור",       0.6f, 0, 0, LANG_HE},  /* throat × corridor */
+    {"צלע",            "קשת",           0.6f, 0, 0, LANG_HE},  /* rib × arch */
+    {"עצם הבריח",      "מעקה",          0.6f, 0, 0, LANG_HE},  /* collarbone × railing */
+    {"עורק",           "תעלה",          0.7f, 0, 0, LANG_HE},  /* artery × canal */
+    {"סחוס",           "גרניט",         0.6f, 0, 0, LANG_HE},  /* cartilage × granite */
+    {"שלד",            "חורבה",         0.7f, 0, 0, LANG_HE},  /* skeleton × ruin */
+    {"בשר",            "שיש",           0.6f, 0, 0, LANG_HE},  /* flesh × marble */
+    /* HE: חורבן × בניין (destruction × construction) */
+    {"חורבן",          "עמוד",          0.8f, 0, 0, LANG_HE},  /* destruction × column */
+    {"תהום",           "שיש",           0.8f, 0, 0, LANG_HE},  /* abyss × marble */
+    {"שממה",           "כיפה",          0.7f, 0, 0, LANG_HE},  /* desolation × dome */
+    {"השמדה",          "אדריכלות",      0.7f, 0, 0, LANG_HE},
+    {"התפוררות",       "מזבח",          0.6f, 0, 0, LANG_HE},  /* crumbling × altar */
+    {"חורבן",          "מקדש",          0.9f, 0, 0, LANG_HE},  /* destruction × sanctuary */
+    /* HE: גלות × מים (exile × water) */
+    {"גלות",           "לגונה",         0.8f, 0, 0, LANG_HE},
+    {"גלות",           "תעלה",          0.7f, 0, 0, LANG_HE},
+    {"גלות",           "אמת מים",       0.7f, 0, 0, LANG_HE},  /* exile × aqueduct */
+    {"גירוש",          "גונדולה",       0.7f, 0, 0, LANG_HE},  /* expulsion × gondola */
+    {"פרידה",          "זרם",           0.6f, 0, 0, LANG_HE},  /* parting × current */
+    {"גבול",           "גאות",          0.6f, 0, 0, LANG_HE},  /* border × tide */
+    {"נדידה",          "מערבולת",       0.6f, 0, 0, LANG_HE},  /* migration × whirlpool */
+    /* HE: זמן × חומר (time × material) */
+    {"נצח",            "מלח",           0.7f, 0, 0, LANG_HE},  /* eternity × salt */
+    {"אלף שנה",        "אפר",           0.6f, 0, 0, LANG_HE},  /* millennium × ash */
+    {"עתיקות",         "חלודה",         0.7f, 0, 0, LANG_HE},  /* antiquity × rust */
+    {"שעון",           "עצם",           0.6f, 0, 0, LANG_HE},  /* clock × bone */
+    {"קדמות",          "אבק",           0.6f, 0, 0, LANG_HE},  /* ancient times × dust */
+    {"עידן",           "סלע",           0.5f, 0, 0, LANG_HE},  /* era × rock */
+    /* HE: שפה × חורבן (language × destruction) */
+    {"דם",             "אלפבית",        0.8f, 0, 0, LANG_HE},  /* blood × alphabet */
+    {"כתב יד",         "אפר",           0.8f, 0, 0, LANG_HE},  /* manuscript × ash */
+    {"עיצור",          "השמדה",         0.7f, 0, 0, LANG_HE},  /* consonant × annihilation */
+    {"הברה",           "כיליון",        0.6f, 0, 0, LANG_HE},  /* syllable × destruction */
+    {"תרגום",          "גלות",          0.8f, 0, 0, LANG_HE},  /* translation × exile */
+    {"שורש",           "חורבן",         0.7f, 0, 0, LANG_HE},  /* root × destruction */
+    {"דיו",            "דם",            0.7f, 0, 0, LANG_HE},  /* ink × blood */
+    {"פסוק",           "גרדום",         0.6f, 0, 0, LANG_HE},  /* verse × gallows */
+    /* HE: ביתי × קוסמי (domestic × cosmic) */
+    {"אדן חלון",       "קונסטלציה",     0.8f, 0, 0, LANG_HE},  /* windowsill × constellation */
+    {"רדיאטור",        "נצח",           0.7f, 0, 0, LANG_HE},  /* radiator × eternity */
+    {"תקרה",           "אינסוף",        0.6f, 0, 0, LANG_HE},  /* ceiling × infinity */
+    {"קרש רצפה",       "אופק",          0.7f, 0, 0, LANG_HE},  /* floorboard × horizon */
+    {"מסדרון",         "מדבר",          0.6f, 0, 0, LANG_HE},  /* corridor × desert */
+    {"מראה",           "תהום",          0.7f, 0, 0, LANG_HE},  /* mirror × abyss */
+    {"וילון",          "אינסוף",        0.6f, 0, 0, LANG_HE},  /* curtain × infinity */
+
+    /* ═══════════════════════════════════════════════════════════════════
+     *  FRENCH (~45 pairs)
+     *  Baudelaire + Rimbaud + Brodsky's Venice in French register.
+     *  Spleen, gouffre, néant. Body as architecture of decay.
+     * ═══════════════════════════════════════════════════════════════════ */
+
+    /* FR: corps × architecture */
+    {"crâne",          "cathédrale",    0.8f, 0, 0, LANG_FR},  /* skull × cathedral */
+    {"vertèbre",       "empire",        0.7f, 0, 0, LANG_FR},  /* vertebra × empire */
+    {"larynx",         "colonnade",     0.7f, 0, 0, LANG_FR},
+    {"diaphragme",     "voûte",         0.6f, 0, 0, LANG_FR},  /* diaphragm × vault */
+    {"sternum",        "façade",        0.5f, 0, 0, LANG_FR},
+    {"omoplate",       "balustrade",    0.6f, 0, 0, LANG_FR},  /* shoulder blade × balustrade */
+    {"aorte",          "méridien",      0.7f, 0, 0, LANG_FR},  /* aorta × meridian */
+    {"synapse",        "cathédrale",    0.7f, 0, 0, LANG_FR},  /* neural × sacred */
+    {"squelette",      "forteresse",    0.6f, 0, 0, LANG_FR},  /* skeleton × fortress */
+    {"os",             "marbre",        0.6f, 0, 0, LANG_FR},  /* bone × marble */
+    {"cartilage",      "granit",        0.6f, 0, 0, LANG_FR},
+    {"tendon",         "aqueduc",       0.6f, 0, 0, LANG_FR},  /* tendon × aqueduct */
+    /* FR: exil × eau */
+    {"exil",           "lagune",        0.8f, 0, 0, LANG_FR},
+    {"exil",           "canal",         0.7f, 0, 0, LANG_FR},
+    {"bannissement",   "gondole",       0.7f, 0, 0, LANG_FR},
+    {"séparation",     "courant",       0.6f, 0, 0, LANG_FR},
+    {"frontière",      "marée",         0.6f, 0, 0, LANG_FR},
+    {"déracinement",   "maelström",     0.7f, 0, 0, LANG_FR},  /* uprooting × maelstrom */
+    /* FR: temps × matière */
+    {"époque",         "poussière",     0.7f, 0, 0, LANG_FR},  /* epoch × dust */
+    {"antiquité",      "rouille",       0.7f, 0, 0, LANG_FR},  /* antiquity × rust */
+    {"millénaire",     "cendre",        0.6f, 0, 0, LANG_FR},  /* millennium × ash */
+    {"éternité",       "sel",           0.7f, 0, 0, LANG_FR},  /* eternity × salt */
+    {"siècle",         "os",            0.6f, 0, 0, LANG_FR},  /* century × bone */
+    {"pendule",        "basalte",       0.5f, 0, 0, LANG_FR},
+    /* FR: néant × géométrie */
+    {"perpendiculaire","néant",         0.7f, 0, 0, LANG_FR},
+    {"asymptote",      "jamais",        0.8f, 0, 0, LANG_FR},  /* asymptote × never */
+    {"parallèle",      "exil",          0.7f, 0, 0, LANG_FR},
+    {"tangente",       "départ",        0.6f, 0, 0, LANG_FR},
+    {"parabole",       "mélancolie",    0.6f, 0, 0, LANG_FR},
+    /* FR: langue × destruction */
+    {"consonne",       "anéantissement",0.7f, 0, 0, LANG_FR},
+    {"syllabe",        "hémorragie",    0.6f, 0, 0, LANG_FR},
+    {"manuscrit",      "cendre",        0.8f, 0, 0, LANG_FR},
+    {"encre",          "sang",          0.7f, 0, 0, LANG_FR},  /* ink × blood */
+    {"strophe",        "sarcophage",    0.6f, 0, 0, LANG_FR},
+    {"rime",           "tombeau",       0.6f, 0, 0, LANG_FR},  /* rhyme × tomb */
+    {"césure",         "mort",          0.7f, 0, 0, LANG_FR},  /* caesura × death */
+    /* FR: domestique × cosmique */
+    {"robinet",        "éternité",      0.7f, 0, 0, LANG_FR},  /* faucet × eternity */
+    {"rideau",         "infini",        0.7f, 0, 0, LANG_FR},  /* curtain × infinity */
+    {"cendrier",       "équinoxe",      0.6f, 0, 0, LANG_FR},  /* ashtray × equinox */
+    {"plafond",        "abîme",         0.6f, 0, 0, LANG_FR},  /* ceiling × abyss */
+    {"radiateur",      "éternité",      0.7f, 0, 0, LANG_FR},
+    {"plancher",       "horizon",       0.7f, 0, 0, LANG_FR},  /* floor × horizon */
+    {"linoléum",       "solstice",      0.7f, 0, 0, LANG_FR},  /* linoleum × solstice */
+    {"escalier",       "gouffre",       0.7f, 0, 0, LANG_FR},  /* staircase × chasm */
+    {"miroir",         "abîme",         0.7f, 0, 0, LANG_FR},  /* mirror × abyss */
+    /* FR: Baudelaire — spleen × matière */
+    {"spleen",         "granit",        0.7f, 0, 0, LANG_FR},
+    {"charogne",       "cathédrale",    0.7f, 0, 0, LANG_FR},  /* carrion × cathedral */
+    {"gouffre",        "cloître",       0.7f, 0, 0, LANG_FR},  /* chasm × cloister */
+
+    /* ═══════════════════════════════════════════════════════════════════
+     *  SPANISH (~45 pairs)
+     *  Borges + Lorca + imperial lexicon. Laberinto, duende, sangre.
+     *  The labyrinth is a body. The library is a cathedral.
+     * ═══════════════════════════════════════════════════════════════════ */
+
+    /* ES: cuerpo × arquitectura */
+    {"cráneo",         "catedral",      0.8f, 0, 0, LANG_ES},  /* skull × cathedral */
+    {"vértebra",       "imperio",       0.7f, 0, 0, LANG_ES},  /* vertebra × empire */
+    {"laringe",        "columnata",     0.7f, 0, 0, LANG_ES},
+    {"diafragma",      "bóveda",        0.6f, 0, 0, LANG_ES},  /* diaphragm × vault */
+    {"esternón",       "fachada",       0.5f, 0, 0, LANG_ES},
+    {"omóplato",       "claustro",      0.6f, 0, 0, LANG_ES},  /* shoulder blade × cloister */
+    {"aorta",          "meridiano",     0.7f, 0, 0, LANG_ES},  /* aorta × meridian */
+    {"esqueleto",      "fortaleza",     0.6f, 0, 0, LANG_ES},
+    {"sangre",         "mármol",        0.7f, 0, 0, LANG_ES},  /* blood × marble */
+    {"hueso",          "columna",       0.6f, 0, 0, LANG_ES},  /* bone × column */
+    /* ES: exilio × agua */
+    {"exilio",         "laguna",        0.8f, 0, 0, LANG_ES},
+    {"exilio",         "canal",         0.7f, 0, 0, LANG_ES},
+    {"destierro",      "góndola",       0.7f, 0, 0, LANG_ES},
+    {"frontera",       "marea",         0.6f, 0, 0, LANG_ES},
+    {"separación",     "corriente",     0.6f, 0, 0, LANG_ES},
+    {"desarraigo",     "naufragio",     0.7f, 0, 0, LANG_ES},  /* uprooting × shipwreck */
+    /* ES: tiempo × materia */
+    {"eternidad",      "sal",           0.7f, 0, 0, LANG_ES},
+    {"milenio",        "ceniza",        0.6f, 0, 0, LANG_ES},  /* millennium × ash */
+    {"antigüedad",     "óxido",         0.7f, 0, 0, LANG_ES},  /* antiquity × rust */
+    {"tiempo",         "polvo",         0.7f, 0, 0, LANG_ES},  /* time × dust */
+    {"época",          "hueso",         0.6f, 0, 0, LANG_ES},
+    /* ES: geometría × vacío */
+    {"perpendicular",  "nada",          0.7f, 0, 0, LANG_ES},
+    {"asíntota",       "nunca",         0.8f, 0, 0, LANG_ES},  /* asymptote × never */
+    {"paralela",       "exilio",        0.7f, 0, 0, LANG_ES},
+    {"tangente",       "partida",       0.6f, 0, 0, LANG_ES},
+    {"parábola",       "melancolía",    0.6f, 0, 0, LANG_ES},
+    /* ES: lengua × destrucción */
+    {"consonante",     "aniquilación",  0.7f, 0, 0, LANG_ES},
+    {"sílaba",         "hemorragia",    0.6f, 0, 0, LANG_ES},
+    {"manuscrito",     "ceniza",        0.8f, 0, 0, LANG_ES},
+    {"tinta",          "sangre",        0.7f, 0, 0, LANG_ES},  /* ink × blood */
+    {"traducción",     "exilio",        0.8f, 0, 0, LANG_ES},
+    {"estrofa",        "sepulcro",      0.6f, 0, 0, LANG_ES},  /* stanza × sepulcher */
+    {"epitafio",       "mármol",        0.6f, 0, 0, LANG_ES},
+    /* ES: doméstico × cósmico */
+    {"espejo",         "eternidad",     0.8f, 0, 0, LANG_ES},  /* mirror × eternity */
+    {"cenicero",       "equinoccio",    0.6f, 0, 0, LANG_ES},  /* ashtray × equinox */
+    {"cortina",        "infinito",      0.7f, 0, 0, LANG_ES},  /* curtain × infinity */
+    {"umbral",         "abismo",        0.7f, 0, 0, LANG_ES},  /* threshold × abyss */
+    {"alféizar",       "horizonte",     0.7f, 0, 0, LANG_ES},  /* windowsill × horizon */
+    {"radiador",       "eternidad",     0.7f, 0, 0, LANG_ES},
+    /* ES: Borges — laberinto × everything */
+    {"laberinto",      "ceniza",        0.7f, 0, 0, LANG_ES},  /* labyrinth × ash */
+    {"puñal",          "biblioteca",    0.8f, 0, 0, LANG_ES},  /* dagger × library — Borges! */
+    {"aleph",          "abismo",        0.8f, 0, 0, LANG_ES},
+    {"destino",        "laberinto",     0.7f, 0, 0, LANG_ES},
+    {"espejo",         "laberinto",     0.7f, 0, 0, LANG_ES},  /* mirror × labyrinth */
+    /* ES: Lorca — duende × sangre */
+    {"duende",         "sangre",        0.8f, 0, 0, LANG_ES},
+    {"duende",         "cal",           0.7f, 0, 0, LANG_ES},  /* duende × lime */
+
+    /* sentinel */
+    {NULL, NULL, 0, 0, 0, 0}
 };
 
 static float tension_score(int last_idx, int cand_idx) {
@@ -1131,6 +1402,10 @@ static float tension_score(int last_idx, int cand_idx) {
     const char *last = vocab[last_idx].text;
     const char *cand = vocab[cand_idx].text;
     for (int i = 0; tensions[i].a; i++) {
+        /* tension works cross-culturally: any pair can fire regardless of
+         * current language. The pair's lang field records its origin tradition,
+         * but a Russian word can create tension with a Hebrew word if the
+         * organism happens to be in multilingual mode. */
         if ((strcmp(last, tensions[i].a) == 0 && strcmp(cand, tensions[i].b) == 0) ||
             (strcmp(last, tensions[i].b) == 0 && strcmp(cand, tensions[i].a) == 0)) {
             /* lifecycle: use_count affects effective tension */
