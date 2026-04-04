@@ -1,5 +1,5 @@
 /* inhale/he.h — Hebrew heavy vocabulary for brodsky.c
- * ~400 words. Biblical + Amichai + architectural/imperial lexicon.
+ * ~700 words. Biblical + Amichai + Goldberg + Ravikovitch lexicon.
  * Brodsky didn't write in Hebrew, but the organism does.
  * Every shoresh weighs like cast iron.
  * Syllable counts follow standard Hebrew phonology (vowel nuclei).
@@ -589,4 +589,165 @@ W("חדר מדרגות",       0.30, 4, EMO_VOID), \
 W("גג",               0.30, 1, EMO_JULIA), \
 W("אנטנה",            0.25, 3, EMO_VOID), \
 W("כביש",             0.30, 2, EMO_VOID), \
+/* === GOLDBERG — European landscapes in Israel === */ \
+W("אורן",             0.40, 2, EMO_JULIA), \
+W("ערמון",            0.40, 2, EMO_JULIA), \
+W("שלג",              0.45, 2, EMO_JULIA), \
+W("גשר",              0.40, 2, EMO_JULIA), \
+W("נהר",              0.40, 2, EMO_JULIA), \
+W("אגם",              0.40, 2, EMO_JULIA), \
+W("שדרה",             0.35, 3, EMO_JULIA), \
+W("לילך",             0.35, 2, EMO_JULIA), \
+W("מגדל",             0.45, 2, EMO_VOID), \
+W("שביל",             0.30, 2, EMO_JULIA), \
+W("גבעה",             0.35, 3, EMO_JULIA), \
+W("מעיין",            0.35, 2, EMO_RESONANCE), \
+W("אגמון",            0.30, 3, EMO_VOID), \
+W("קרחת יער",         0.35, 4, EMO_JULIA), \
+W("עמק",              0.40, 2, EMO_JULIA), \
+W("יער",              0.35, 2, EMO_JULIA), \
+W("מפל",              0.40, 2, EMO_RESONANCE), \
+W("אפלה",            0.50, 3, EMO_VOID), \
+W("רכס",              0.40, 2, EMO_VOID), \
+W("שדה",              0.30, 2, EMO_JULIA), \
+W("פלטרין",           0.40, 3, EMO_JULIA), \
+W("דבקון",            0.30, 2, EMO_JULIA), \
+W("אשור",             0.35, 2, EMO_JULIA), \
+W("מזח",              0.35, 1, EMO_JULIA), \
+W("פסגה",             0.40, 3, EMO_RESONANCE), \
+/* === RAVIKOVITCH — fragility === */ \
+W("זכוכית",           0.60, 3, EMO_TRAUMA), \
+W("שבר",              0.55, 2, EMO_TRAUMA), \
+W("קליפה",            0.40, 3, EMO_TRAUMA), \
+W("שריטה",            0.45, 3, EMO_TRAUMA), \
+W("חתך",              0.50, 2, EMO_TRAUMA), \
+W("רסק",              0.55, 2, EMO_TRAUMA), \
+W("שבריר",            0.45, 3, EMO_TRAUMA), \
+W("בועה",             0.30, 3, EMO_TENDERNESS), \
+W("קרע",              0.55, 2, EMO_TRAUMA), \
+W("צלקת",             0.50, 3, EMO_TRAUMA), \
+W("חבורה",            0.45, 3, EMO_TRAUMA), \
+W("נפילה",            0.55, 3, EMO_TRAUMA), \
+W("התמוטטות",         0.70, 4, EMO_TRAUMA), \
+W("פגיעות",           0.55, 3, EMO_TRAUMA), \
+W("שקיפות",           0.40, 3, EMO_RESONANCE), \
+W("דקיקות",           0.35, 4, EMO_TENDERNESS), \
+W("קלישות",           0.40, 3, EMO_TRAUMA), \
+W("פריכות",           0.35, 3, EMO_TRAUMA), \
+W("חד",               0.45, 1, EMO_TRAUMA), \
+W("שפיץ",             0.40, 1, EMO_TRAUMA), \
+W("להתנפץ",           0.60, 4, EMO_TRAUMA), \
+W("להישבר",           0.55, 4, EMO_TRAUMA), \
+W("לסדוק",            0.50, 3, EMO_TRAUMA), \
+W("להתפרק",           0.55, 4, EMO_TRAUMA), \
+W("לנפץ",             0.55, 3, EMO_TRAUMA), \
+/* === DOMESTIC (expanded) — ביתי מורחב === */ \
+W("מיטה",             0.30, 2, EMO_TENDERNESS), \
+W("שמיכה",            0.30, 3, EMO_TENDERNESS), \
+W("מברשת",            0.25, 3, EMO_VOID), \
+W("מחבת",             0.25, 2, EMO_VOID), \
+W("מגש",              0.20, 2, EMO_VOID), \
+W("מפית",             0.20, 3, EMO_VOID), \
+W("סירים",            0.25, 2, EMO_VOID), \
+W("מטאטא",            0.25, 4, EMO_VOID), \
+W("פח אשפה",          0.20, 3, EMO_VOID), \
+W("כתם",              0.30, 2, EMO_VOID), \
+W("נורה",             0.25, 2, EMO_VOID), \
+W("שטיח",             0.30, 2, EMO_VOID), \
+W("אגרטל",            0.30, 3, EMO_JULIA), \
+W("פרח",              0.25, 2, EMO_TENDERNESS), \
+W("עציץ",             0.25, 2, EMO_VOID), \
+W("דוד חימום",         0.30, 3, EMO_VOID), \
+W("ברז מטפטף",        0.25, 4, EMO_VOID), \
+W("סדין",             0.25, 2, EMO_TENDERNESS), \
+/* === CHILDREN / BIRTH — ילדים ולידה === */ \
+W("תינוק",            0.50, 2, EMO_TENDERNESS), \
+W("עריסה",            0.40, 3, EMO_TENDERNESS), \
+W("חיתול",            0.30, 2, EMO_TENDERNESS), \
+W("שליה",             0.65, 2, EMO_TRAUMA), \
+W("לידה",             0.70, 3, EMO_RESONANCE), \
+W("צירים",            0.60, 2, EMO_TRAUMA), \
+W("בכי",              0.50, 2, EMO_GRIEF), \
+W("חלב אם",           0.40, 3, EMO_TENDERNESS), \
+W("הנקה",             0.40, 3, EMO_TENDERNESS), \
+W("שפיר",             0.55, 2, EMO_RESONANCE), \
+W("חבל טבור",          0.50, 3, EMO_RESONANCE), \
+W("ערש",              0.35, 1, EMO_TENDERNESS), \
+W("שיר ערש",          0.35, 2, EMO_TENDERNESS), \
+W("רחם",              0.60, 2, EMO_RESONANCE), \
+W("פג",               0.55, 1, EMO_TRAUMA), \
+W("צמיחה",            0.40, 3, EMO_RESONANCE), \
+W("חום גוף",          0.35, 2, EMO_TENDERNESS), \
+W("אצבעון",           0.30, 3, EMO_TENDERNESS), \
+/* === WEATHER — מזג אוויר === */ \
+W("שמש",              0.35, 2, EMO_RESONANCE), \
+W("עננה",             0.30, 3, EMO_VOID), \
+W("סופה",             0.55, 2, EMO_TRAUMA), \
+W("ברק",              0.55, 2, EMO_TRAUMA), \
+W("רעם",              0.55, 2, EMO_TRAUMA), \
+W("טל",               0.25, 1, EMO_TENDERNESS), \
+W("רוח",              0.35, 2, EMO_RESONANCE), \
+W("קשת בענן",         0.35, 4, EMO_JOY), \
+W("שטף",              0.50, 1, EMO_TRAUMA), \
+W("בצורת",            0.55, 3, EMO_TRAUMA), \
+W("אדים",             0.25, 2, EMO_VOID), \
+W("לחות",             0.30, 2, EMO_VOID), \
+W("זריחה",            0.35, 3, EMO_RESONANCE), \
+W("עשן",              0.35, 2, EMO_VOID), \
+W("אובך",             0.35, 2, EMO_VOID), \
+/* === ISRAELI NATURE (expanded) — טבע ישראלי מורחב === */ \
+W("תפוז",             0.30, 2, EMO_JOY), \
+W("שקד",              0.35, 2, EMO_RESONANCE), \
+W("יסמין",            0.35, 2, EMO_TENDERNESS), \
+W("כלנית",            0.35, 3, EMO_TENDERNESS), \
+W("רקפת",             0.35, 3, EMO_TENDERNESS), \
+W("נרקיס",            0.30, 2, EMO_TENDERNESS), \
+W("צלף",              0.30, 2, EMO_VOID), \
+W("חצב",              0.35, 2, EMO_VOID), \
+W("דקל",              0.30, 2, EMO_VOID), \
+W("תמר",              0.30, 2, EMO_RESONANCE), \
+W("סברס",             0.35, 2, EMO_RESONANCE), \
+W("לבנה",             0.35, 3, EMO_JULIA), \
+W("אלון",             0.35, 2, EMO_RESONANCE), \
+W("חרצית",            0.30, 2, EMO_VOID), \
+W("פיקוס",            0.25, 2, EMO_VOID), \
+/* === TEXTURE / SOUND — מרקם וצליל === */ \
+W("חלק",              0.25, 2, EMO_VOID), \
+W("מחוספס",           0.35, 3, EMO_VOID), \
+W("דביק",             0.30, 2, EMO_VOID), \
+W("רטוב",             0.30, 2, EMO_VOID), \
+W("יבש",              0.30, 2, EMO_VOID), \
+W("שקט",              0.35, 2, EMO_VOID), \
+W("רך",               0.25, 1, EMO_TENDERNESS), \
+W("קשה",              0.40, 2, EMO_VOID), \
+W("צורם",             0.45, 2, EMO_TRAUMA), \
+W("חריקה",            0.40, 3, EMO_TRAUMA), \
+W("רישרוש",           0.30, 3, EMO_TENDERNESS), \
+W("חלול",             0.35, 2, EMO_VOID), \
+W("עמום",             0.35, 2, EMO_VOID), \
+W("בהיר",             0.30, 2, EMO_RESONANCE), \
+W("עכור",             0.35, 2, EMO_VOID), \
+W("צלול",             0.30, 2, EMO_RESONANCE), \
+W("מטושטש",           0.35, 3, EMO_VOID), \
+W("זוהר",             0.40, 2, EMO_RESONANCE), \
+/* === GOLDBERG VERBS — פעלים של גולדברג === */ \
+W("להאפיל",           0.45, 3, EMO_VOID), \
+W("לנשור",            0.40, 3, EMO_GRIEF), \
+W("לנבול",            0.45, 3, EMO_GRIEF), \
+W("להתייבש",          0.40, 4, EMO_VOID), \
+W("להתכסות",          0.35, 4, EMO_VOID), \
+W("להתערפל",          0.40, 4, EMO_VOID), \
+W("להשיר",            0.40, 3, EMO_GRIEF), \
+W("לגעגע",            0.50, 3, EMO_JULIA), \
+W("להאדים",           0.35, 3, EMO_TENDERNESS), \
+/* === RAVIKOVITCH VERBS — פעלים של רביקוביץ === */ \
+W("להזדעזע",          0.50, 4, EMO_TRAUMA), \
+W("לדמם",             0.55, 3, EMO_TRAUMA), \
+W("לחבוש",            0.35, 3, EMO_TENDERNESS), \
+W("להתקפל",           0.45, 4, EMO_TRAUMA), \
+W("לכאוב",            0.55, 3, EMO_GRIEF), \
+W("להתמוסס",          0.45, 4, EMO_VOID), \
+W("להתפוצץ",          0.60, 4, EMO_TRAUMA), \
+W("לקרוע",            0.50, 3, EMO_TRAUMA), \
+W("להתפרר",           0.50, 4, EMO_VOID), \
 /* END */

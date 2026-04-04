@@ -1,5 +1,6 @@
 /* inhale/en.h — English heavy vocabulary for brodsky.c
- * 650 words. Latinisms, polysyllables, Brodsky's actual lexicon.
+ * 810 words. Latinisms, polysyllables, Brodsky's actual lexicon.
+ * Plath (domestic horror, female viscera), Celan (broken language, absence).
  * Each word: text, mass, syllables, emotion, consonant_density (precomputed)
  */
 
@@ -687,4 +688,178 @@ W("adjournment",     0.50, 3, EMO_VOID), \
 W("moratorium",      0.50, 5, EMO_VOID), \
 W("recidivism",      0.50, 4, EMO_VOID), \
 W("armistice",       0.55, 3, EMO_VOID), \
+/* === PLATH — DOMESTIC HORROR === */ \
+W("oven",            0.60, 2, EMO_TRAUMA), \
+W("nursery",         0.50, 3, EMO_TRAUMA), \
+W("mirror",          0.45, 2, EMO_TRAUMA), \
+W("razor",           0.55, 2, EMO_TRAUMA), \
+W("jar",             0.35, 1, EMO_TRAUMA), \
+W("specimen",        0.55, 3, EMO_TRAUMA), \
+W("electrode",       0.55, 3, EMO_TRAUMA), \
+W("incubator",       0.50, 4, EMO_TRAUMA), \
+W("autopsy",         0.65, 3, EMO_TRAUMA), \
+W("bell",            0.35, 1, EMO_TRAUMA), \
+W("gauze",           0.35, 1, EMO_TRAUMA), \
+W("scalpel",         0.55, 2, EMO_TRAUMA), \
+W("forceps",         0.50, 2, EMO_TRAUMA), \
+W("catheter",        0.50, 3, EMO_TRAUMA), \
+W("gurney",          0.45, 2, EMO_TRAUMA), \
+W("stirrup",         0.45, 2, EMO_TRAUMA), \
+W("speculum",        0.55, 3, EMO_TRAUMA), \
+W("swab",            0.30, 1, EMO_TRAUMA), \
+W("syringe",         0.50, 2, EMO_TRAUMA), \
+/* === PLATH — BODY (FEMALE, VISCERAL) === */ \
+W("placenta",        0.65, 3, EMO_TRAUMA), \
+W("uterus",          0.60, 3, EMO_TRAUMA), \
+W("ovary",           0.55, 3, EMO_TRAUMA), \
+W("cervix",          0.55, 2, EMO_TRAUMA), \
+W("nipple",          0.40, 2, EMO_TRAUMA), \
+W("lactate",         0.45, 2, EMO_TRAUMA), \
+W("umbilical",       0.55, 4, EMO_TRAUMA), \
+W("menstrual",       0.55, 3, EMO_TRAUMA), \
+W("amniotic",        0.55, 4, EMO_TRAUMA), \
+W("fallopian",       0.55, 4, EMO_TRAUMA), \
+W("vulva",           0.50, 2, EMO_TRAUMA), \
+W("episiotomy",      0.60, 6, EMO_TRAUMA), \
+W("colostrum",       0.50, 3, EMO_TRAUMA), \
+/* === CELAN — BROKEN LANGUAGE === */ \
+W("morpheme",        0.50, 2, EMO_RESONANCE), \
+W("phoneme",         0.50, 2, EMO_RESONANCE), \
+W("grapheme",        0.50, 2, EMO_RESONANCE), \
+W("erasure",         0.55, 3, EMO_GRIEF), \
+W("lacuna",          0.55, 3, EMO_GRIEF), \
+W("redaction",       0.55, 3, EMO_TRAUMA), \
+W("elision",         0.50, 3, EMO_GRIEF), \
+W("aphasic",         0.55, 3, EMO_TRAUMA), \
+W("glottal",         0.45, 2, EMO_RESONANCE), \
+W("fricative",       0.50, 3, EMO_RESONANCE), \
+W("plosive",         0.45, 2, EMO_RESONANCE), \
+W("diphthong",       0.50, 2, EMO_RESONANCE), \
+W("ligature",        0.50, 3, EMO_RESONANCE), \
+/* === CELAN — ABSENCE === */ \
+W("neve",            0.40, 2, EMO_GRIEF), \
+W("cinder",          0.45, 2, EMO_GRIEF), \
+W("char",            0.40, 1, EMO_GRIEF), \
+W("residue",         0.45, 3, EMO_VOID), \
+W("trace",           0.40, 1, EMO_GRIEF), \
+W("remnant",         0.50, 2, EMO_GRIEF), \
+W("vestige",         0.50, 2, EMO_GRIEF), \
+W("afterimage",      0.45, 3, EMO_GRIEF), \
+W("hollow",          0.40, 2, EMO_VOID), \
+W("void",            0.55, 1, EMO_VOID), \
+W("absence",         0.55, 2, EMO_GRIEF), \
+W("nullity",         0.50, 3, EMO_VOID), \
+/* === WEATHER / ATMOSPHERE === */ \
+W("drizzle",         0.30, 2, EMO_VOID), \
+W("sleet",           0.35, 1, EMO_VOID), \
+W("haze",            0.30, 1, EMO_VOID), \
+W("overcast",        0.35, 3, EMO_VOID), \
+W("muggy",           0.25, 2, EMO_VOID), \
+W("swelter",         0.40, 2, EMO_VOID), \
+W("gust",            0.35, 1, EMO_VOID), \
+W("squall",          0.45, 1, EMO_TRAUMA), \
+W("tempest",         0.55, 2, EMO_TRAUMA), \
+W("drought",         0.50, 1, EMO_VOID), \
+W("hoarfrost",       0.45, 2, EMO_VOID), \
+W("downpour",        0.40, 2, EMO_VOID), \
+/* === TEXTURE / SENSATION === */ \
+W("gritty",          0.35, 2, EMO_VOID), \
+W("viscous",         0.45, 2, EMO_VOID), \
+W("abrasive",        0.45, 3, EMO_TRAUMA), \
+W("coarse",          0.35, 1, EMO_VOID), \
+W("granular",        0.40, 3, EMO_VOID), \
+W("porous",          0.40, 2, EMO_VOID), \
+W("brittle",         0.45, 2, EMO_TRAUMA), \
+W("supple",          0.35, 2, EMO_TENDERNESS), \
+W("taut",            0.40, 1, EMO_VOID), \
+W("slack",           0.30, 1, EMO_VOID), \
+W("limp",            0.30, 1, EMO_VOID), \
+W("clammy",          0.35, 2, EMO_TRAUMA), \
+/* === SOUND === */ \
+W("clatter",         0.40, 2, EMO_VOID), \
+W("creak",           0.35, 1, EMO_VOID), \
+W("rasp",            0.40, 1, EMO_TRAUMA), \
+W("gurgle",          0.35, 2, EMO_VOID), \
+W("wheeze",          0.45, 1, EMO_TRAUMA), \
+W("rattle",          0.40, 2, EMO_TRAUMA), \
+W("hiss",            0.35, 1, EMO_VOID), \
+W("drone",           0.35, 1, EMO_VOID), \
+W("throb",           0.45, 1, EMO_TRAUMA), \
+W("thud",            0.40, 1, EMO_VOID), \
+W("clang",           0.40, 1, EMO_VOID), \
+W("screech",         0.45, 1, EMO_TRAUMA), \
+W("groan",           0.40, 1, EMO_GRIEF), \
+/* === INSECTS / SMALL LIFE === */ \
+W("moth",            0.35, 1, EMO_VOID), \
+W("cockroach",       0.40, 2, EMO_VOID), \
+W("centipede",       0.40, 3, EMO_VOID), \
+W("maggot",          0.45, 2, EMO_TRAUMA), \
+W("larva",           0.40, 2, EMO_VOID), \
+W("chrysalis",       0.45, 3, EMO_RESONANCE), \
+W("pupa",            0.35, 2, EMO_VOID), \
+W("termite",         0.40, 2, EMO_VOID), \
+W("mite",            0.25, 1, EMO_VOID), \
+W("louse",           0.30, 1, EMO_VOID), \
+W("weevil",          0.35, 2, EMO_VOID), \
+W("cicada",          0.40, 3, EMO_VOID), \
+/* === TOOLS === */ \
+W("wrench",          0.40, 1, EMO_VOID), \
+W("pliers",          0.40, 2, EMO_VOID), \
+W("awl",             0.35, 1, EMO_VOID), \
+W("chisel",          0.40, 2, EMO_VOID), \
+W("vise",            0.40, 1, EMO_VOID), \
+W("clamp",           0.35, 1, EMO_VOID), \
+W("lathe",           0.40, 1, EMO_VOID), \
+W("rivet",           0.35, 2, EMO_VOID), \
+W("solder",          0.40, 2, EMO_VOID), \
+W("gimlet",          0.35, 2, EMO_VOID), \
+W("anvil",           0.45, 2, EMO_VOID), \
+W("trowel",          0.35, 1, EMO_VOID), \
+/* === PLATH — ADDITIONAL DOMESTIC === */ \
+W("liniment",        0.40, 3, EMO_TRAUMA), \
+W("iodine",          0.45, 3, EMO_TRAUMA), \
+W("bandage",         0.35, 2, EMO_TRAUMA), \
+W("splint",          0.40, 1, EMO_TRAUMA), \
+W("crib",            0.35, 1, EMO_TRAUMA), \
+W("bassinet",        0.40, 3, EMO_TRAUMA), \
+W("cradle",          0.40, 2, EMO_TRAUMA), \
+W("diaper",          0.30, 3, EMO_TRAUMA), \
+W("formula",         0.35, 3, EMO_VOID), \
+W("stroller",        0.35, 2, EMO_VOID), \
+W("cisternae",       0.50, 3, EMO_TRAUMA), \
+W("curettage",       0.55, 3, EMO_TRAUMA), \
+W("retractor",       0.50, 3, EMO_TRAUMA), \
+/* === CELAN — ADDITIONAL ABSENCE === */ \
+W("rubble",          0.40, 2, EMO_GRIEF), \
+W("debris",          0.45, 2, EMO_GRIEF), \
+W("detritus",        0.50, 3, EMO_VOID), \
+W("efface",          0.45, 2, EMO_GRIEF), \
+W("occlude",         0.45, 2, EMO_VOID), \
+W("oblique",         0.45, 2, EMO_VOID), \
+W("opacity",         0.45, 4, EMO_VOID), \
+W("penumbra",        0.50, 3, EMO_GRIEF), \
+W("umbra",           0.45, 2, EMO_GRIEF), \
+W("silhouette",      0.45, 3, EMO_GRIEF), \
+W("specter",         0.50, 2, EMO_GRIEF), \
+/* === CELAN — ADDITIONAL LANGUAGE === */ \
+W("bilabial",        0.45, 4, EMO_RESONANCE), \
+W("alveolar",        0.45, 4, EMO_RESONANCE), \
+W("sibilant",        0.45, 3, EMO_RESONANCE), \
+W("guttural",        0.50, 3, EMO_RESONANCE), \
+W("uvular",          0.45, 3, EMO_RESONANCE), \
+W("aspirate",        0.45, 3, EMO_RESONANCE), \
+/* === ADDITIONAL WEATHER === */ \
+W("nimbus",          0.40, 2, EMO_VOID), \
+W("cumulus",         0.40, 3, EMO_VOID), \
+W("cirrus",          0.35, 2, EMO_VOID), \
+W("stratus",         0.35, 2, EMO_VOID), \
+W("monsoon",         0.45, 2, EMO_VOID), \
+W("sirocco",         0.45, 3, EMO_VOID), \
+W("mistral",         0.45, 2, EMO_VOID), \
+/* === ADDITIONAL TEXTURE === */ \
+W("callous",         0.45, 2, EMO_VOID), \
+W("fibrous",         0.40, 2, EMO_VOID), \
+W("calcified",       0.45, 3, EMO_VOID), \
+W("serrated",        0.45, 3, EMO_VOID), \
+W("corrugated",      0.45, 4, EMO_VOID), \
 /* END */

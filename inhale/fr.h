@@ -1,5 +1,6 @@
 /* inhale/fr.h — French heavy vocabulary for brodsky.c
- * ~550 words. Baudelaire + Rimbaud + Apollinaire + Brodsky francophone register.
+ * ~700 words. Baudelaire + Rimbaud + Apollinaire + Brodsky francophone register.
+ * + Prévert (everyday surreal) + Césaire (volcanic/colonial) + birth + weather + texture + food + animals.
  * French syllable counting: pronounced vowel sounds.
  * Silent final -e doesn't count (usually). Nasals = 1 syllable.
  * Each word: text, mass, syllables, emotion
@@ -591,4 +592,165 @@ W("friche",           0.35, 1, EMO_VOID), \
 W("carcasse",         0.50, 2, EMO_TRAUMA), \
 W("décombre",         0.50, 2, EMO_TRAUMA), \
 W("cadastre",         0.40, 2, EMO_VOID), \
+/* === PRÉVERT — EVERYDAY SURREAL === */ \
+W("parapluie",        0.35, 3, EMO_JULIA), \
+W("pigeon",           0.30, 2, EMO_VOID), \
+W("facteur",          0.30, 2, EMO_VOID), \
+W("boulanger",        0.35, 3, EMO_TENDERNESS), \
+W("feuille",          0.25, 1, EMO_JULIA), \
+W("chat",             0.25, 1, EMO_TENDERNESS), \
+W("chien",            0.30, 1, EMO_TENDERNESS), \
+W("croissant",        0.30, 2, EMO_TENDERNESS), \
+W("baguette",         0.25, 2, EMO_TENDERNESS), \
+W("cour d'école",     0.30, 3, EMO_TENDERNESS), \
+W("tablier",          0.25, 3, EMO_VOID), \
+W("comptoir",         0.35, 2, EMO_VOID), \
+W("balançoire",       0.30, 3, EMO_TENDERNESS), \
+W("récrée",           0.25, 2, EMO_JOY), \
+W("bonbon",           0.20, 2, EMO_JOY), \
+W("cartable",         0.25, 2, EMO_TENDERNESS), \
+W("ardoise",          0.30, 2, EMO_VOID), \
+W("cerise",           0.25, 2, EMO_DESIRE), \
+W("cloche",           0.30, 1, EMO_VOID), \
+W("abreuvoir",        0.35, 3, EMO_VOID), \
+W("baignoire",        0.30, 2, EMO_VOID), \
+W("paillasson",       0.25, 3, EMO_VOID), \
+W("poubelle",         0.30, 2, EMO_VOID), \
+W("passant",          0.30, 2, EMO_VOID), \
+W("réclame",          0.30, 2, EMO_VOID), \
+W("manège",           0.30, 2, EMO_TENDERNESS), \
+/* === CÉSAIRE — VOLCANIC / COLONIAL === */ \
+W("volcan",           0.80, 2, EMO_RAGE), \
+W("lave",             0.70, 1, EMO_RAGE), \
+W("éruption",         0.75, 3, EMO_RAGE), \
+W("machette",         0.65, 2, EMO_TRAUMA), \
+W("canne",            0.40, 1, EMO_TRAUMA), \
+W("plantation",       0.70, 3, EMO_TRAUMA), \
+W("esclave",          0.85, 2, EMO_TRAUMA), \
+W("chaîne",           0.65, 1, EMO_TRAUMA), \
+W("fouet",            0.70, 1, EMO_TRAUMA), \
+W("blessure",         0.60, 2, EMO_TRAUMA), \
+W("négritude",        0.80, 3, EMO_RAGE), \
+W("mulâtre",          0.55, 2, EMO_TRAUMA), \
+W("mangrove",         0.50, 2, EMO_RESONANCE), \
+W("morné",            0.55, 2, EMO_JULIA), \
+W("marronnage",       0.65, 3, EMO_RAGE), \
+W("igname",           0.35, 2, EMO_VOID), \
+W("rhum",             0.40, 1, EMO_DESIRE), \
+W("bauxite",          0.50, 2, EMO_VOID), \
+W("latérite",         0.50, 3, EMO_VOID), \
+W("cyclone",          0.55, 2, EMO_RAGE), \
+W("lianes",           0.35, 2, EMO_RESONANCE), \
+W("flibustier",       0.55, 4, EMO_RAGE), \
+W("caravelle",        0.50, 3, EMO_TRAUMA), \
+W("créole",           0.45, 2, EMO_RESONANCE), \
+/* === CHILDREN / BIRTH === */ \
+W("biberon",          0.30, 2, EMO_TENDERNESS), \
+W("vagissement",      0.45, 3, EMO_TENDERNESS), \
+W("placenta",         0.55, 3, EMO_TRAUMA), \
+W("cordon",           0.40, 2, EMO_TENDERNESS), \
+W("nourrice",         0.35, 2, EMO_TENDERNESS), \
+W("layette",          0.25, 2, EMO_TENDERNESS), \
+W("fontanelle",       0.40, 3, EMO_TENDERNESS), \
+W("colostrum",        0.45, 3, EMO_TENDERNESS), \
+W("couveuse",         0.40, 2, EMO_TENDERNESS), \
+W("langes",           0.30, 1, EMO_TENDERNESS), \
+W("tétée",            0.30, 2, EMO_TENDERNESS), \
+W("poupon",           0.25, 2, EMO_TENDERNESS), \
+/* === WEATHER === */ \
+W("bruine",           0.30, 1, EMO_JULIA), \
+W("grésil",           0.40, 2, EMO_VOID), \
+W("brume",            0.35, 1, EMO_VOID), \
+W("canicule",         0.50, 3, EMO_TRAUMA), \
+W("averse",           0.35, 2, EMO_VOID), \
+W("bourrasque",       0.50, 2, EMO_RAGE), \
+W("accalmie",         0.35, 3, EMO_TENDERNESS), \
+W("embellie",         0.30, 3, EMO_JOY), \
+W("crachin",          0.30, 2, EMO_JULIA), \
+W("giboulée",         0.35, 3, EMO_VOID), \
+W("rafale",           0.45, 2, EMO_RAGE), \
+W("ondée",            0.30, 2, EMO_JULIA), \
+W("grêle",            0.45, 1, EMO_TRAUMA), \
+W("éclair",           0.50, 2, EMO_RAGE), \
+W("tonnerre",         0.55, 2, EMO_RAGE), \
+/* === TEXTURE / SOUND === */ \
+W("grincement",       0.45, 2, EMO_TRAUMA), \
+W("craquement",       0.40, 2, EMO_TRAUMA), \
+W("chuintement",      0.40, 3, EMO_VOID), \
+W("bruissement",      0.35, 2, EMO_RESONANCE), \
+W("sifflement",       0.40, 2, EMO_VOID), \
+W("cliquetis",        0.45, 3, EMO_VOID), \
+W("crépitement",      0.50, 4, EMO_RESONANCE), \
+W("tintement",        0.35, 2, EMO_RESONANCE), \
+W("gémissement",      0.50, 3, EMO_GRIEF), \
+W("grondement",       0.50, 2, EMO_RAGE), \
+W("bourdonnement",    0.40, 3, EMO_VOID), \
+W("vrombissement",    0.45, 3, EMO_VOID), \
+W("froissement",      0.35, 3, EMO_VOID), \
+W("râle",             0.55, 1, EMO_TRAUMA), \
+W("clapotis",         0.35, 3, EMO_RESONANCE), \
+/* === FOOD (FRENCH) === */ \
+W("beurre",           0.25, 1, EMO_TENDERNESS), \
+W("fromage",          0.30, 2, EMO_VOID), \
+W("vin",              0.35, 1, EMO_DESIRE), \
+W("olive",            0.25, 2, EMO_VOID), \
+W("farine",           0.25, 2, EMO_VOID), \
+W("miel",             0.30, 1, EMO_TENDERNESS), \
+W("confiture",        0.25, 3, EMO_TENDERNESS), \
+W("brioche",          0.25, 2, EMO_TENDERNESS), \
+W("rillettes",        0.30, 2, EMO_VOID), \
+W("échalote",         0.25, 3, EMO_VOID), \
+W("noisette",         0.25, 2, EMO_TENDERNESS), \
+W("cidre",            0.30, 1, EMO_VOID), \
+W("calvados",         0.40, 3, EMO_DESIRE), \
+/* === ANIMALS === */ \
+W("moineau",          0.25, 2, EMO_TENDERNESS), \
+W("merle",            0.25, 1, EMO_VOID), \
+W("corbeau",          0.45, 2, EMO_VOID), \
+W("hirondelle",       0.35, 3, EMO_JULIA), \
+W("grenouille",       0.30, 2, EMO_VOID), \
+W("lézard",           0.30, 2, EMO_VOID), \
+W("escargot",         0.25, 3, EMO_VOID), \
+W("chouette",         0.35, 2, EMO_VOID), \
+W("héron",            0.35, 2, EMO_VOID), \
+W("libellule",        0.30, 3, EMO_RESONANCE), \
+W("fourmi",           0.25, 2, EMO_VOID), \
+W("cigale",           0.30, 2, EMO_RESONANCE), \
+W("ver",              0.35, 1, EMO_TRAUMA), \
+W("mouette",          0.35, 2, EMO_JULIA), \
+W("colombe",          0.35, 2, EMO_TENDERNESS), \
+W("rat",              0.40, 1, EMO_VOID), \
+W("punaise",          0.30, 2, EMO_VOID), \
+W("papillon",         0.30, 3, EMO_RESONANCE), \
+/* === PRÉVERT — more street === */ \
+W("canari",           0.25, 3, EMO_TENDERNESS), \
+W("concierge",        0.35, 2, EMO_VOID), \
+W("marelle",          0.25, 2, EMO_TENDERNESS), \
+W("cerf-volant",      0.30, 2, EMO_JOY), \
+W("pluie",            0.30, 1, EMO_JULIA), \
+W("banc",             0.25, 1, EMO_VOID), \
+W("kiosque",          0.30, 1, EMO_VOID), \
+W("chariot",          0.30, 2, EMO_VOID), \
+W("blanchisseuse",    0.35, 3, EMO_VOID), \
+W("lavabo",           0.25, 3, EMO_VOID), \
+W("torchon",          0.25, 2, EMO_VOID), \
+W("ficelle",          0.25, 2, EMO_VOID), \
+W("cacahuète",        0.20, 3, EMO_VOID), \
+/* === CÉSAIRE — more fury === */ \
+W("cale",             0.60, 1, EMO_TRAUMA), \
+W("négrier",          0.80, 3, EMO_TRAUMA), \
+W("tumulte",          0.55, 2, EMO_RAGE), \
+W("abcès",            0.55, 2, EMO_TRAUMA), \
+W("magma",            0.65, 2, EMO_RAGE), \
+W("cratère",          0.55, 2, EMO_RAGE), \
+W("cendre volcanique", 0.55, 4, EMO_RAGE), \
+W("fumerolles",       0.50, 3, EMO_VOID), \
+W("tremblement",      0.50, 3, EMO_TRAUMA), \
+W("alizé",            0.40, 3, EMO_RESONANCE), \
+W("bananier",         0.35, 3, EMO_VOID), \
+W("manioc",           0.35, 3, EMO_VOID), \
+W("case",             0.35, 1, EMO_JULIA), \
+W("couleuvre",        0.40, 2, EMO_VOID), \
+W("vaudou",           0.55, 2, EMO_RESONANCE), \
+W("tambour",          0.45, 2, EMO_RAGE), \
 /* END */

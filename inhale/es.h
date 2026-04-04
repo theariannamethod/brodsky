@@ -1,5 +1,7 @@
 /* inhale/es.h — Spanish heavy vocabulary for brodsky.c
- * ~550 words. Borges + Lorca + Neruda: cerebral, visceral, material.
+ * ~700 words. Borges + Lorca + Neruda + Vallejo + Storni.
+ * Vallejo: body as political document, arithmetic of suffering.
+ * Storni: the sea as mirror, woman's body as contested territory.
  * Spanish syllable counting: vowel nuclei, diphthongs = 1 syllable.
  * ai, ei, oi, au, eu, ou, ia, ie, io, iu, ua, ue, uo = diphthongs (1 syl).
  * Hiatus when accent mark breaks diphthong: ía, úa, etc. = 2 syllables.
@@ -602,4 +604,159 @@ W("fragua",           0.40, 2, EMO_RAGE), \
 W("hornacina",        0.30, 4, EMO_VOID), \
 W("candil",           0.25, 2, EMO_TENDERNESS), \
 W("pábilo",           0.25, 3, EMO_VOID), \
+/* === VALLEJO — CUERPO COMO DOCUMENTO === */ \
+W("hambre",           0.85, 2, EMO_TRAUMA), \
+W("fiebre",           0.75, 2, EMO_TRAUMA), \
+W("sudor",            0.55, 2, EMO_TRAUMA), \
+W("mandíbula",        0.60, 4, EMO_TRAUMA), \
+W("párpado",          0.45, 3, EMO_TRAUMA), \
+W("muñeca",           0.40, 3, EMO_TRAUMA), \
+W("tobillo",          0.40, 3, EMO_TRAUMA), \
+W("nuca",             0.50, 2, EMO_TRAUMA), \
+W("codo",             0.35, 2, EMO_TRAUMA), \
+W("falange",          0.45, 3, EMO_TRAUMA), \
+W("periostio",        0.50, 4, EMO_TRAUMA), \
+W("esófago",          0.55, 4, EMO_TRAUMA), \
+W("ingle",            0.45, 2, EMO_TRAUMA), \
+W("talón",            0.40, 2, EMO_TRAUMA), \
+W("empeine",          0.35, 3, EMO_TRAUMA), \
+W("metacarpo",        0.45, 4, EMO_TRAUMA), \
+W("axila",            0.35, 3, EMO_TRAUMA), \
+W("esfínter",         0.50, 3, EMO_TRAUMA), \
+/* === VALLEJO — ARITMÉTICA DEL SUFRIMIENTO === */ \
+W("suma",             0.55, 2, EMO_VOID), \
+W("resta",            0.55, 2, EMO_VOID), \
+W("multiplicar",      0.60, 4, EMO_VOID), \
+W("dividir",          0.60, 3, EMO_TRAUMA), \
+W("cifra",            0.50, 2, EMO_VOID), \
+W("ecuación",         0.55, 4, EMO_RESONANCE), \
+W("cero",             0.70, 2, EMO_VOID), \
+W("número",           0.45, 3, EMO_VOID), \
+W("cociente",         0.45, 3, EMO_VOID), \
+W("residuo",          0.40, 3, EMO_VOID), \
+W("fracción",         0.50, 2, EMO_TRAUMA), \
+W("aritmética",       0.55, 4, EMO_VOID), \
+W("cómputo",          0.45, 3, EMO_VOID), \
+W("álgebra",          0.50, 3, EMO_RESONANCE), \
+W("exponente",        0.45, 4, EMO_RESONANCE), \
+W("dígito",           0.40, 3, EMO_VOID), \
+W("sustraendo",       0.45, 4, EMO_VOID), \
+/* === STORNI — MAR COMO ESPEJO === */ \
+W("ola",              0.50, 2, EMO_RESONANCE), \
+W("espuma",           0.40, 3, EMO_RESONANCE), \
+W("orilla",           0.40, 3, EMO_JULIA), \
+W("coral",            0.35, 2, EMO_RESONANCE), \
+W("alga",             0.30, 2, EMO_VOID), \
+W("medusa",           0.45, 3, EMO_TRAUMA), \
+W("brisa",            0.30, 2, EMO_TENDERNESS), \
+W("pleamar",          0.45, 3, EMO_RESONANCE), \
+W("bajamar",          0.40, 3, EMO_VOID), \
+W("sargazo",          0.35, 3, EMO_VOID), \
+W("rompeolas",        0.45, 4, EMO_RAGE), \
+W("salitre",          0.40, 3, EMO_VOID), \
+W("abismo marino",    0.70, 6, EMO_VOID), \
+W("espigón",          0.40, 3, EMO_VOID), \
+W("escollera",        0.40, 4, EMO_VOID), \
+W("bajío",            0.45, 3, EMO_TRAUMA), \
+W("remolino",         0.50, 4, EMO_TRAUMA), \
+/* === NIÑOS & NACIMIENTO === */ \
+W("cuna",             0.35, 2, EMO_TENDERNESS), \
+W("pañal",            0.25, 2, EMO_TENDERNESS), \
+W("placenta",         0.55, 3, EMO_TRAUMA), \
+W("cordón",           0.45, 2, EMO_TENDERNESS), \
+W("lactancia",        0.40, 3, EMO_TENDERNESS), \
+W("parto",            0.60, 2, EMO_TRAUMA), \
+W("fontanela",        0.35, 4, EMO_TENDERNESS), \
+W("calostro",         0.40, 3, EMO_TENDERNESS), \
+W("neonato",          0.35, 4, EMO_JOY), \
+W("amnios",           0.45, 2, EMO_RESONANCE), \
+W("embrión",          0.50, 2, EMO_RESONANCE), \
+W("pezón",            0.35, 2, EMO_TENDERNESS), \
+W("arrullar",         0.30, 3, EMO_TENDERNESS), \
+/* === CLIMA & ATMÓSFERA === */ \
+W("llovizna",         0.35, 3, EMO_JULIA), \
+W("bruma",            0.35, 2, EMO_VOID), \
+W("canícula",         0.55, 4, EMO_RAGE), \
+W("chubasco",         0.45, 3, EMO_RAGE), \
+W("cellisca",         0.40, 3, EMO_VOID), \
+W("bochorno",         0.45, 3, EMO_VOID), \
+W("rocío",            0.30, 3, EMO_TENDERNESS), \
+W("helada",           0.40, 3, EMO_VOID), \
+W("siroco",           0.40, 3, EMO_RAGE), \
+W("calima",           0.35, 3, EMO_VOID), \
+W("cierzo",           0.40, 2, EMO_VOID), \
+W("borrasca",         0.50, 3, EMO_RAGE), \
+/* === TEXTURA & SONIDO === */ \
+W("chirrido",         0.45, 3, EMO_TRAUMA), \
+W("crujido",          0.45, 3, EMO_TRAUMA), \
+W("zumbido",          0.40, 3, EMO_VOID), \
+W("chasquido",        0.40, 3, EMO_VOID), \
+W("traqueteo",        0.35, 4, EMO_VOID), \
+W("repiqueteo",       0.35, 5, EMO_VOID), \
+W("ronquido",         0.35, 3, EMO_VOID), \
+W("fragor",           0.50, 2, EMO_RAGE), \
+W("crepitar",         0.40, 3, EMO_RESONANCE), \
+W("rechinar",         0.40, 3, EMO_TRAUMA), \
+W("tableteo",         0.35, 4, EMO_VOID), \
+/* === COMIDA LATINOAMERICANA === */ \
+W("maíz",             0.35, 2, EMO_TENDERNESS), \
+W("tortilla",         0.30, 3, EMO_TENDERNESS), \
+W("aguacate",         0.30, 4, EMO_TENDERNESS), \
+W("mango",            0.30, 2, EMO_JOY), \
+W("cacao",            0.35, 3, EMO_RESONANCE), \
+W("piloncillo",       0.30, 4, EMO_TENDERNESS), \
+W("canela",           0.30, 3, EMO_DESIRE), \
+W("tamal",            0.25, 2, EMO_TENDERNESS), \
+W("yuca",             0.25, 2, EMO_VOID), \
+W("nopal",            0.25, 2, EMO_VOID), \
+W("guayaba",          0.25, 3, EMO_JOY), \
+W("papaya",           0.25, 3, EMO_JOY), \
+W("plátano",          0.25, 3, EMO_TENDERNESS), \
+W("chile",            0.30, 2, EMO_RAGE), \
+W("epazote",          0.25, 4, EMO_VOID), \
+/* === ANIMALES === */ \
+W("gorrión",          0.30, 2, EMO_TENDERNESS), \
+W("cuervo",           0.45, 2, EMO_VOID), \
+W("golondrina",       0.40, 4, EMO_JULIA), \
+W("lagartija",        0.30, 4, EMO_VOID), \
+W("cucaracha",        0.30, 4, EMO_VOID), \
+W("hormiga",          0.25, 3, EMO_VOID), \
+W("lechuza",          0.40, 3, EMO_VOID), \
+W("salamandra",       0.35, 4, EMO_RESONANCE), \
+W("escarabajo",       0.30, 4, EMO_VOID), \
+W("luciérnaga",       0.35, 4, EMO_RESONANCE), \
+W("grillo",           0.25, 2, EMO_TENDERNESS), \
+W("polilla",          0.30, 3, EMO_VOID), \
+W("murciélago",       0.40, 4, EMO_VOID), \
+W("gavilán",          0.40, 3, EMO_RAGE), \
+W("alacrán",          0.40, 3, EMO_TRAUMA), \
+/* === PRÉVERT — SURREALISMO COTIDIANO === */ \
+W("paraguas",         0.25, 3, EMO_JULIA), \
+W("panadero",         0.30, 4, EMO_TENDERNESS), \
+W("cartero",          0.30, 3, EMO_JULIA), \
+W("tendero",          0.25, 3, EMO_VOID), \
+W("cerrajero",        0.30, 4, EMO_VOID), \
+W("relojero",         0.30, 4, EMO_RESONANCE), \
+W("trapero",          0.25, 3, EMO_VOID), \
+W("vendedor",         0.25, 3, EMO_VOID), \
+W("deshollinador",    0.30, 5, EMO_VOID), \
+W("organillero",      0.30, 5, EMO_JULIA), \
+W("farolero",         0.25, 4, EMO_JULIA), \
+W("carbonero",        0.30, 4, EMO_VOID), \
+/* === VALLEJO — VERBOS ARITMÉTICOS === */ \
+W("sumar",            0.45, 2, EMO_VOID), \
+W("restar",           0.45, 2, EMO_VOID), \
+W("contabilizar",     0.40, 5, EMO_VOID), \
+W("descontar",        0.40, 3, EMO_VOID), \
+W("enumerar",         0.35, 4, EMO_VOID), \
+W("computar",         0.40, 3, EMO_VOID), \
+/* === STORNI — VERBOS DEL MAR === */ \
+W("naufragar",        0.55, 3, EMO_TRAUMA), \
+W("encallar",         0.45, 3, EMO_TRAUMA), \
+W("varar",            0.40, 2, EMO_VOID), \
+W("anegar",           0.50, 3, EMO_TRAUMA), \
+W("ahogar",           0.60, 3, EMO_TRAUMA), \
+W("emerger",          0.40, 3, EMO_RESONANCE), \
+W("derivar",          0.35, 3, EMO_VOID), \
+W("ondular",          0.30, 3, EMO_RESONANCE), \
 /* END */
