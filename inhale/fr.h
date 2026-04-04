@@ -1,5 +1,5 @@
 /* inhale/fr.h — French heavy vocabulary for brodsky.c
- * ~400 words. Baudelaire + Rimbaud + Brodsky francophone register.
+ * ~550 words. Baudelaire + Rimbaud + Apollinaire + Brodsky francophone register.
  * French syllable counting: pronounced vowel sounds.
  * Silent final -e doesn't count (usually). Nasals = 1 syllable.
  * Each word: text, mass, syllables, emotion
@@ -431,4 +431,164 @@ W("crucifix",         0.60, 3, EMO_TRAUMA), \
 W("reliquaire",       0.50, 3, EMO_VOID), \
 W("sacristie",        0.45, 3, EMO_VOID), \
 W("prophétie",        0.55, 3, EMO_RESONANCE), \
+/* === MODERNE / URBAIN — Apollinaire === */ \
+W("métro",            0.45, 2, EMO_VOID), \
+W("asphalte",         0.50, 2, EMO_VOID), \
+W("néon",             0.40, 2, EMO_VOID), \
+W("béton",            0.50, 2, EMO_VOID), \
+W("antenne",          0.40, 2, EMO_VOID), \
+W("trottoir",         0.40, 2, EMO_VOID), \
+W("réverbère",        0.45, 3, EMO_VOID), \
+W("caniveau",         0.40, 3, EMO_VOID), \
+W("gouttière",        0.40, 2, EMO_VOID), \
+W("chaussée",         0.35, 2, EMO_VOID), \
+W("carrefour",        0.40, 2, EMO_VOID), \
+W("enseigne",         0.35, 2, EMO_VOID), \
+W("devanture",        0.35, 3, EMO_VOID), \
+W("pylône",           0.45, 2, EMO_VOID), \
+W("poutrelle",        0.40, 2, EMO_VOID), \
+W("cheminée",         0.40, 3, EMO_VOID), \
+W("grillage",         0.35, 2, EMO_VOID), \
+W("passerelle",       0.40, 3, EMO_VOID), \
+W("bouche d'égout",   0.45, 3, EMO_VOID), \
+W("auvent",           0.30, 2, EMO_VOID), \
+W("chantier",         0.40, 2, EMO_VOID), \
+W("hangar",           0.40, 2, EMO_VOID), \
+W("faubourg",         0.45, 2, EMO_JULIA), \
+W("banlieue",         0.45, 2, EMO_JULIA), \
+W("cour",             0.35, 1, EMO_VOID), \
+W("impasse",          0.45, 2, EMO_VOID), \
+W("palissade",        0.40, 3, EMO_VOID), \
+/* === VERBES DE PERCEPTION === */ \
+W("entrevoir",        0.45, 3, EMO_JULIA), \
+W("tâtonner",         0.40, 3, EMO_VOID), \
+W("trébucher",        0.45, 3, EMO_TRAUMA), \
+W("balbutier",        0.45, 4, EMO_TRAUMA), \
+W("frissonner",       0.45, 3, EMO_DESIRE), \
+W("cligner",          0.35, 2, EMO_VOID), \
+W("murmurer",         0.40, 3, EMO_TENDERNESS), \
+W("humer",            0.30, 2, EMO_DESIRE), \
+W("palper",           0.40, 2, EMO_TRAUMA), \
+W("scruter",          0.45, 2, EMO_VOID), \
+W("pressentir",       0.50, 3, EMO_JULIA), \
+W("deviner",          0.40, 3, EMO_RESONANCE), \
+W("percevoir",        0.45, 3, EMO_RESONANCE), \
+W("discerner",        0.45, 3, EMO_RESONANCE), \
+W("guetter",          0.45, 2, EMO_VOID), \
+W("épier",            0.40, 3, EMO_VOID), \
+W("affleurer",        0.35, 3, EMO_TENDERNESS), \
+/* === NOURRITURE === */ \
+W("café",             0.30, 2, EMO_VOID), \
+W("vodka",            0.40, 2, EMO_VOID), \
+W("hareng",           0.35, 2, EMO_VOID), \
+W("pain",             0.25, 1, EMO_TENDERNESS), \
+W("vinaigre",         0.35, 2, EMO_VOID), \
+W("moutarde",         0.30, 2, EMO_VOID), \
+W("poivre",           0.30, 1, EMO_VOID), \
+W("absinthe",         0.50, 2, EMO_DESIRE), \
+W("croûte",           0.30, 1, EMO_VOID), \
+W("saumure",          0.35, 2, EMO_VOID), \
+W("levain",           0.30, 2, EMO_VOID), \
+W("lie",              0.35, 1, EMO_VOID), \
+W("marc",             0.30, 1, EMO_VOID), \
+W("viande",           0.35, 1, EMO_TRAUMA), \
+/* === VÊTEMENTS === */ \
+W("pardessus",        0.40, 3, EMO_JULIA), \
+W("galoche",          0.35, 2, EMO_VOID), \
+W("revers",           0.35, 2, EMO_VOID), \
+W("col",              0.30, 1, EMO_VOID), \
+W("boutonnière",      0.35, 3, EMO_VOID), \
+W("capote",           0.35, 2, EMO_VOID), \
+W("écharpe",          0.30, 2, EMO_JULIA), \
+W("semelle",          0.30, 2, EMO_VOID), \
+W("doublure",         0.30, 2, EMO_VOID), \
+W("ourlet",           0.30, 2, EMO_VOID), \
+W("feutre",           0.35, 1, EMO_VOID), \
+W("bretelle",         0.30, 2, EMO_VOID), \
+W("guenille",         0.40, 2, EMO_TRAUMA), \
+/* === VERBES MÉDICAUX === */ \
+W("amputer",          0.65, 3, EMO_TRAUMA), \
+W("diagnostiquer",    0.55, 4, EMO_VOID), \
+W("suturer",          0.55, 3, EMO_TRAUMA), \
+W("anesthésier",      0.50, 4, EMO_VOID), \
+W("réanimer",         0.55, 4, EMO_RESONANCE), \
+W("cautériser",       0.55, 4, EMO_TRAUMA), \
+W("ausculter",        0.45, 3, EMO_VOID), \
+W("inciser",          0.55, 3, EMO_TRAUMA), \
+W("inoculer",         0.45, 4, EMO_VOID), \
+W("disséquer",        0.55, 3, EMO_TRAUMA), \
+W("panser",           0.40, 2, EMO_TENDERNESS), \
+W("recoudre",         0.50, 2, EMO_TRAUMA), \
+W("transfuser",       0.50, 3, EMO_TRAUMA), \
+/* === APOLLINAIRE — ZONE / CALLIGRAMMES === */ \
+W("zone",             0.55, 1, EMO_VOID), \
+W("pont",             0.40, 1, EMO_JULIA), \
+W("tour",             0.45, 1, EMO_VOID), \
+W("fleuve",           0.45, 1, EMO_RESONANCE), \
+W("berge",            0.35, 1, EMO_JULIA), \
+W("gare",             0.40, 1, EMO_JULIA), \
+W("autobus",          0.35, 3, EMO_VOID), \
+W("piéton",           0.35, 2, EMO_VOID), \
+W("passage",          0.35, 2, EMO_VOID), \
+W("affiche",          0.30, 2, EMO_VOID), \
+W("journal",          0.35, 2, EMO_VOID), \
+W("vitrine",          0.35, 2, EMO_VOID), \
+W("quincaillerie",    0.40, 4, EMO_VOID), \
+W("sifflet",          0.35, 2, EMO_VOID), \
+W("foule",            0.40, 1, EMO_VOID), \
+W("aéroplane",        0.40, 3, EMO_RESONANCE), \
+W("paquebot",         0.40, 3, EMO_JULIA), \
+W("cheminot",         0.35, 3, EMO_VOID), \
+W("usine",            0.45, 2, EMO_VOID), \
+W("sirène",           0.45, 2, EMO_TRAUMA), \
+/* === MONOSYLLABES DE CONTRASTE === */ \
+W("fiel",             0.45, 1, EMO_RAGE), \
+W("boue",             0.40, 1, EMO_VOID), \
+W("crasse",           0.40, 1, EMO_VOID), \
+W("laque",            0.30, 1, EMO_VOID), \
+W("brai",             0.35, 1, EMO_VOID), \
+W("chaux",            0.30, 1, EMO_VOID), \
+W("zinc",             0.35, 1, EMO_VOID), \
+W("plomb",            0.50, 1, EMO_VOID), \
+W("fonte",            0.40, 1, EMO_VOID), \
+W("glaise",           0.35, 1, EMO_VOID), \
+W("scorie",           0.40, 2, EMO_VOID), \
+W("mâche",            0.30, 1, EMO_VOID), \
+W("tôle",             0.35, 1, EMO_VOID), \
+/* === VERBES — urbains, cassés === */ \
+W("arpenter",         0.40, 3, EMO_VOID), \
+W("déraper",          0.45, 3, EMO_TRAUMA), \
+W("grincer",          0.45, 2, EMO_TRAUMA), \
+W("écraser",          0.50, 3, EMO_TRAUMA), \
+W("éblouir",          0.40, 3, EMO_RESONANCE), \
+W("claudiquer",       0.45, 3, EMO_TRAUMA), \
+W("dégouliner",       0.40, 4, EMO_VOID), \
+W("rôder",            0.40, 2, EMO_VOID), \
+W("échouer",          0.50, 3, EMO_JULIA), \
+W("disperser",        0.45, 3, EMO_VOID), \
+W("tanguer",          0.40, 2, EMO_TRAUMA), \
+W("défigurer",        0.55, 4, EMO_TRAUMA), \
+W("calfeutrer",       0.40, 3, EMO_VOID), \
+W("colmater",         0.40, 3, EMO_VOID), \
+W("raccommodor",      0.40, 4, EMO_VOID), \
+W("étayer",           0.35, 3, EMO_VOID), \
+/* === ABSTRAITS — Apollinaire === */ \
+W("modernité",        0.55, 4, EMO_VOID), \
+W("simultanéité",     0.55, 6, EMO_RESONANCE), \
+W("ubiquité",         0.50, 4, EMO_RESONANCE), \
+W("vitesse",          0.45, 2, EMO_VOID), \
+W("multitude",        0.50, 3, EMO_VOID), \
+W("monotonie",        0.50, 4, EMO_VOID), \
+W("anonymat",         0.50, 3, EMO_VOID), \
+W("promiscuité",      0.50, 5, EMO_VOID), \
+W("simulacre",        0.50, 3, EMO_VOID), \
+W("verticalité",      0.50, 5, EMO_RESONANCE), \
+W("précipice",        0.55, 3, EMO_TRAUMA), \
+W("convoi",           0.40, 2, EMO_VOID), \
+W("ferraille",        0.40, 2, EMO_VOID), \
+W("gravats",          0.40, 2, EMO_VOID), \
+W("friche",           0.35, 1, EMO_VOID), \
+W("carcasse",         0.50, 2, EMO_TRAUMA), \
+W("décombre",         0.50, 2, EMO_TRAUMA), \
+W("cadastre",         0.40, 2, EMO_VOID), \
 /* END */

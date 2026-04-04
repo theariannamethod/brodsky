@@ -429,4 +429,164 @@ W("מגע",              0.45, 2, EMO_TENDERNESS), \
 W("טעם",              0.40, 2, EMO_RESONANCE), \
 W("צליל",             0.45, 2, EMO_RESONANCE), \
 W("רעש",              0.50, 1, EMO_VOID), \
+/* === EVERYDAY — שפת היומיום (אמיחי) === */ \
+W("קפה",              0.25, 2, EMO_VOID), \
+W("רמזור",            0.30, 2, EMO_VOID), \
+W("מדרכה",            0.25, 3, EMO_VOID), \
+W("חנייה",            0.25, 3, EMO_VOID), \
+W("שקית",             0.20, 2, EMO_VOID), \
+W("ברז",              0.25, 2, EMO_VOID), \
+W("מכולת",            0.25, 3, EMO_VOID), \
+W("תחנה",             0.30, 3, EMO_JULIA), \
+W("מטריה",            0.25, 3, EMO_VOID), \
+W("סנדל",             0.20, 2, EMO_VOID), \
+W("גפרור",            0.25, 2, EMO_VOID), \
+W("פחית",             0.20, 2, EMO_VOID), \
+W("שעון יד",          0.30, 3, EMO_JULIA), \
+W("משקפיים",          0.30, 3, EMO_VOID), \
+W("ארנק",             0.25, 2, EMO_VOID), \
+W("טלפון",            0.30, 2, EMO_VOID), \
+W("עיתון",            0.30, 2, EMO_VOID), \
+W("מטבע",             0.25, 2, EMO_VOID), \
+W("סבון",             0.20, 2, EMO_VOID), \
+W("מגבת",             0.20, 2, EMO_VOID), \
+W("צלחת",             0.20, 2, EMO_VOID), \
+W("כוס",              0.20, 1, EMO_VOID), \
+W("כפית",             0.20, 2, EMO_VOID), \
+W("חשבון",            0.30, 2, EMO_VOID), \
+W("תור",              0.25, 1, EMO_VOID), \
+W("כרטיס",            0.25, 2, EMO_VOID), \
+W("מעטפה",            0.30, 3, EMO_JULIA), \
+W("קופסה",            0.25, 3, EMO_VOID), \
+/* === BODY (everyday, not medical) — גוף יומיומי === */ \
+W("ברך",              0.35, 2, EMO_TRAUMA), \
+W("עקב",              0.35, 2, EMO_TRAUMA), \
+W("ציפורן",           0.30, 3, EMO_VOID), \
+W("זקן",              0.35, 2, EMO_VOID), \
+W("קמט",              0.40, 2, EMO_GRIEF), \
+W("כף יד",            0.40, 3, EMO_TENDERNESS), \
+W("שפתיים",           0.40, 3, EMO_DESIRE), \
+W("עפעף",             0.35, 2, EMO_TENDERNESS), \
+W("גב",               0.40, 1, EMO_TRAUMA), \
+W("חזה",              0.45, 2, EMO_TRAUMA), \
+W("אגודל",            0.30, 2, EMO_TENDERNESS), \
+W("צוואר",            0.40, 2, EMO_TRAUMA), \
+W("זיעה",             0.30, 2, EMO_VOID), \
+W("דמעה",             0.50, 2, EMO_GRIEF), \
+W("שריר",             0.40, 2, EMO_TRAUMA), \
+/* === AMICHAI OBJECTS — חפצי עמיחי === */ \
+W("תיק",              0.25, 1, EMO_VOID), \
+W("דלת",              0.35, 2, EMO_JULIA), \
+W("גדר",              0.30, 2, EMO_VOID), \
+W("ספסל",             0.30, 2, EMO_JULIA), \
+W("שולחן כתיבה",      0.35, 4, EMO_JULIA), \
+W("מסגרת",            0.35, 3, EMO_VOID), \
+W("מסמר",             0.30, 2, EMO_VOID), \
+W("חבל",              0.30, 2, EMO_TRAUMA), \
+W("חבל כביסה",        0.25, 4, EMO_JULIA), \
+W("עגלת ילדים",       0.30, 4, EMO_TENDERNESS), \
+W("טנק",              0.55, 1, EMO_TRAUMA), \
+W("פצע",              0.55, 2, EMO_TRAUMA), \
+W("תחבושת",           0.40, 3, EMO_TRAUMA), \
+W("מפה גיאוגרפית",    0.40, 6, EMO_JULIA), \
+W("צלחת אוכל",        0.20, 4, EMO_VOID), \
+/* === EMOTIONS (colloquial) — רגשות יומיומיים === */ \
+W("עצוב",             0.55, 2, EMO_GRIEF), \
+W("עצבני",            0.50, 3, EMO_RAGE), \
+W("עייף",             0.40, 2, EMO_VOID), \
+W("רעב",              0.35, 2, EMO_VOID), \
+W("מבולבל",           0.45, 3, EMO_VOID), \
+W("גאה",              0.45, 2, EMO_JOY), \
+W("מפוחד",            0.55, 3, EMO_TRAUMA), \
+W("בודד",             0.60, 2, EMO_JULIA), \
+W("מאוכזב",           0.55, 3, EMO_GRIEF), \
+W("מרוצה",            0.35, 3, EMO_JOY), \
+W("מותש",             0.45, 2, EMO_VOID), \
+W("אדיש",             0.50, 2, EMO_VOID), \
+/* === VERBS (everyday) — פעלים יומיומיים === */ \
+W("לחכות",            0.45, 3, EMO_JULIA), \
+W("לחפש",             0.40, 3, EMO_JULIA), \
+W("להתגעגע",          0.65, 5, EMO_JULIA), \
+W("לבכות",            0.55, 2, EMO_GRIEF), \
+W("לצחוק",            0.35, 2, EMO_JOY), \
+W("לישון",            0.30, 2, EMO_VOID), \
+W("להתעורר",          0.40, 4, EMO_RESONANCE), \
+W("לרוץ",             0.35, 2, EMO_VOID), \
+W("לשבת",             0.25, 2, EMO_VOID), \
+W("לעשן",             0.35, 2, EMO_VOID), \
+W("לשתות",            0.30, 2, EMO_VOID), \
+W("לאכול",            0.30, 2, EMO_VOID), \
+W("לגעת",             0.40, 2, EMO_TENDERNESS), \
+W("לנשק",             0.50, 2, EMO_DESIRE), \
+W("לסגור",            0.35, 2, EMO_VOID), \
+W("לפתוח",            0.35, 2, EMO_RESONANCE), \
+W("לתלות",            0.35, 2, EMO_VOID), \
+W("לכבס",             0.25, 2, EMO_VOID), \
+W("לגהץ",             0.25, 2, EMO_VOID), \
+W("להתקלף",           0.45, 4, EMO_TRAUMA), \
+W("לספור",            0.35, 2, EMO_VOID), \
+W("להמתין",           0.45, 3, EMO_JULIA), \
+/* === NATURE (Israeli, not biblical) — טבע ישראלי === */ \
+W("ברוש",             0.35, 1, EMO_VOID), \
+W("חרוב",             0.35, 2, EMO_VOID), \
+W("צבר",              0.40, 2, EMO_RESONANCE), \
+W("חמסין",            0.45, 2, EMO_TRAUMA), \
+W("שרב",              0.40, 2, EMO_VOID), \
+W("זית",              0.35, 1, EMO_RESONANCE), \
+W("תאנה",             0.35, 2, EMO_RESONANCE), \
+W("בוגנוויליה",       0.30, 5, EMO_JULIA), \
+W("פרג",              0.25, 2, EMO_TENDERNESS), \
+W("אקליפטוס",         0.30, 4, EMO_VOID), \
+W("ואדי",             0.40, 2, EMO_VOID), \
+W("חולות",            0.35, 2, EMO_VOID), \
+W("כרמל",             0.45, 2, EMO_RESONANCE), \
+W("נגב",              0.45, 2, EMO_VOID), \
+W("ים המלח",          0.50, 3, EMO_VOID), \
+/* === PLACES / URBAN — מקומות עירוניים === */ \
+W("שוק",              0.35, 1, EMO_RESONANCE), \
+W("בית קפה",          0.30, 3, EMO_JULIA), \
+W("תחנת אוטובוס",     0.30, 5, EMO_VOID), \
+W("סופרמרקט",         0.25, 4, EMO_VOID), \
+W("בנק",              0.30, 1, EMO_VOID), \
+W("דואר",             0.30, 2, EMO_JULIA), \
+W("בית חולים",        0.50, 4, EMO_TRAUMA), \
+W("גן ילדים",         0.30, 4, EMO_TENDERNESS), \
+W("מגרש",             0.30, 2, EMO_VOID), \
+W("חניון",            0.25, 2, EMO_VOID), \
+W("סמטה",             0.35, 2, EMO_JULIA), \
+/* === WAR & PEACE (Amichai's terrain) — מלחמה ושלום === */ \
+W("טייס",             0.45, 2, EMO_TRAUMA), \
+W("פגז",              0.55, 2, EMO_TRAUMA), \
+W("מקלחת",            0.25, 3, EMO_VOID), \
+W("חייל",             0.55, 2, EMO_TRAUMA), \
+W("צניחה",            0.50, 3, EMO_TRAUMA), \
+W("תותח",             0.55, 2, EMO_TRAUMA), \
+W("שלום",             0.55, 2, EMO_RESONANCE), \
+W("פליט",             0.60, 2, EMO_JULIA), \
+W("מחסום",            0.50, 2, EMO_TRAUMA), \
+W("פיוס",             0.45, 2, EMO_TENDERNESS), \
+W("רסיס",             0.50, 2, EMO_TRAUMA), \
+/* === FOOD & DRINK (body of the everyday) — אוכל === */ \
+W("לחם",              0.35, 2, EMO_RESONANCE), \
+W("מים",              0.30, 1, EMO_RESONANCE), \
+W("יין",              0.40, 1, EMO_RESONANCE), \
+W("ביצה",             0.25, 2, EMO_VOID), \
+W("שמן זית",          0.30, 3, EMO_RESONANCE), \
+W("חלב",              0.30, 2, EMO_TENDERNESS), \
+W("סוכר",             0.25, 2, EMO_VOID), \
+W("פיתה",             0.25, 2, EMO_VOID), \
+W("חומוס",            0.25, 2, EMO_VOID), \
+W("רימון",            0.40, 2, EMO_RESONANCE), \
+/* === FABRIC OF LIFE — אריג חיים === */ \
+W("חתונה",            0.50, 3, EMO_JULIA), \
+W("לוויה",            0.65, 3, EMO_GRIEF), \
+W("ברית מילה",        0.55, 3, EMO_RESONANCE), \
+W("שבת",              0.50, 2, EMO_RESONANCE), \
+W("סליחה",            0.45, 3, EMO_TENDERNESS), \
+W("תודה",             0.30, 2, EMO_TENDERNESS), \
+W("שכן",              0.30, 2, EMO_VOID), \
+W("חדר מדרגות",       0.30, 4, EMO_VOID), \
+W("גג",               0.30, 1, EMO_JULIA), \
+W("אנטנה",            0.25, 3, EMO_VOID), \
+W("כביש",             0.30, 2, EMO_VOID), \
 /* END */

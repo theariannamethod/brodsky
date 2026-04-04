@@ -1,5 +1,5 @@
 /* inhale/es.h — Spanish heavy vocabulary for brodsky.c
- * ~400 words. Borges + Lorca + architectural/body/imperial lexicon.
+ * ~550 words. Borges + Lorca + Neruda: cerebral, visceral, material.
  * Spanish syllable counting: vowel nuclei, diphthongs = 1 syllable.
  * ai, ei, oi, au, eu, ou, ia, ie, io, iu, ua, ue, uo = diphthongs (1 syl).
  * Hiatus when accent mark breaks diphthong: ía, úa, etc. = 2 syllables.
@@ -256,7 +256,7 @@ W("oxígeno",          0.45, 4, EMO_RESONANCE), \
 /* === PALABRAS FUNCIÓN — solo pesadas === */ \
 W("nunca",            0.50, 2, EMO_VOID), \
 W("en ninguna parte", 0.50, 6, EMO_VOID), \
-W("nada",             0.55, 2, EMO_VOID), \
+W("jamás",            0.55, 2, EMO_VOID), \
 W("nadie",            0.50, 2, EMO_VOID), \
 W("a pesar de",       0.35, 4, EMO_VOID), \
 W("entre",            0.25, 2, EMO_VOID), \
@@ -442,4 +442,164 @@ W("purificar",        0.45, 4, EMO_RESONANCE), \
 W("transmutar",       0.50, 3, EMO_RESONANCE), \
 W("calcinar",         0.55, 3, EMO_RAGE), \
 W("pulverizar",       0.50, 4, EMO_TRAUMA), \
+/* === NERUDA — OBJETOS SAGRADOS === */ \
+W("calcetín",         0.25, 3, EMO_TENDERNESS), \
+W("cuchara",          0.25, 3, EMO_TENDERNESS), \
+W("tenedor",          0.25, 3, EMO_VOID), \
+W("plato",            0.20, 2, EMO_VOID), \
+W("taza",             0.25, 2, EMO_TENDERNESS), \
+W("vela",             0.30, 2, EMO_RESONANCE), \
+W("jabón",            0.20, 2, EMO_TENDERNESS), \
+W("tijera",           0.30, 3, EMO_VOID), \
+W("aguja",            0.30, 3, EMO_TRAUMA), \
+W("dedal",            0.20, 2, EMO_TENDERNESS), \
+W("botón",            0.20, 2, EMO_VOID), \
+W("clavo",            0.25, 2, EMO_VOID), \
+W("martillo",         0.30, 3, EMO_RAGE), \
+W("servilleta",       0.20, 4, EMO_VOID), \
+W("mantel",           0.20, 2, EMO_TENDERNESS), \
+W("escoba",           0.20, 3, EMO_VOID), \
+W("balde",            0.20, 2, EMO_VOID), \
+W("jarra",            0.25, 2, EMO_TENDERNESS), \
+W("olla",             0.25, 2, EMO_TENDERNESS), \
+W("sartén",           0.25, 2, EMO_VOID), \
+/* === COMIDA — odas de Neruda === */ \
+W("café",             0.30, 2, EMO_VOID), \
+W("vodka",            0.35, 2, EMO_VOID), \
+W("arenque",          0.30, 3, EMO_VOID), \
+W("pan",              0.30, 1, EMO_TENDERNESS), \
+W("vinagre",          0.30, 3, EMO_VOID), \
+W("mostaza",          0.25, 3, EMO_VOID), \
+W("cebolla",          0.30, 3, EMO_TENDERNESS), \
+W("alcachofa",        0.30, 4, EMO_TENDERNESS), \
+W("limón",            0.25, 2, EMO_JOY), \
+W("aceite",           0.25, 3, EMO_TENDERNESS), \
+W("ajo",              0.25, 2, EMO_VOID), \
+W("miga",             0.20, 2, EMO_TENDERNESS), \
+W("corteza",          0.25, 3, EMO_VOID), \
+W("levadura",         0.25, 4, EMO_RESONANCE), \
+W("fermento",         0.30, 3, EMO_RESONANCE), \
+/* === ROPA === */ \
+W("abrigo",           0.35, 3, EMO_JULIA), \
+W("gabardina",        0.35, 4, EMO_JULIA), \
+W("solapa",           0.30, 3, EMO_VOID), \
+W("cuello",           0.30, 2, EMO_VOID), \
+W("ojal",             0.20, 2, EMO_VOID), \
+W("bolsillo",         0.25, 3, EMO_VOID), \
+W("zurcido",          0.25, 3, EMO_TENDERNESS), \
+W("remiendo",         0.25, 3, EMO_TENDERNESS), \
+W("dobladillo",       0.20, 4, EMO_VOID), \
+W("forro",            0.20, 2, EMO_VOID), \
+/* === MODERNO / URBANO === */ \
+W("metro",            0.40, 2, EMO_VOID), \
+W("asfalto",          0.40, 3, EMO_VOID), \
+W("neón",             0.35, 2, EMO_VOID), \
+W("hormigón",         0.45, 3, EMO_VOID), \
+W("antena",           0.30, 3, EMO_VOID), \
+W("acera",            0.30, 3, EMO_VOID), \
+W("farola",           0.30, 3, EMO_JULIA), \
+W("alcantarilla",     0.40, 5, EMO_VOID), \
+W("cuneta",           0.30, 3, EMO_VOID), \
+W("semáforo",         0.30, 4, EMO_VOID), \
+W("buzón",            0.25, 2, EMO_JULIA), \
+W("andamio",          0.35, 3, EMO_VOID), \
+W("grúa",             0.35, 2, EMO_VOID), \
+W("vagón",            0.35, 2, EMO_JULIA), \
+W("andén",            0.35, 2, EMO_JULIA), \
+W("marquesina",       0.30, 4, EMO_VOID), \
+W("zaguán",           0.35, 2, EMO_VOID), \
+/* === VERBOS DE PERCEPCIÓN === */ \
+W("percibir",         0.40, 3, EMO_RESONANCE), \
+W("entrever",         0.35, 3, EMO_RESONANCE), \
+W("tantear",          0.35, 3, EMO_VOID), \
+W("tropezar",         0.40, 3, EMO_TRAUMA), \
+W("balbucear",        0.40, 4, EMO_GRIEF), \
+W("estremecerse",     0.50, 5, EMO_TRAUMA), \
+W("entrecerrar",      0.35, 4, EMO_VOID), \
+W("murmurar",         0.35, 3, EMO_TENDERNESS), \
+W("palpar",           0.35, 2, EMO_RESONANCE), \
+W("olfatear",         0.30, 4, EMO_VOID), \
+W("saborear",         0.35, 4, EMO_TENDERNESS), \
+W("atisbar",          0.35, 3, EMO_VOID), \
+/* === VERBOS MÉDICOS === */ \
+W("amputar",          0.65, 3, EMO_TRAUMA), \
+W("diagnosticar",     0.50, 4, EMO_VOID), \
+W("suturar",          0.55, 3, EMO_TRAUMA), \
+W("anestesiar",       0.50, 4, EMO_VOID), \
+W("cauterizar",       0.55, 4, EMO_TRAUMA), \
+W("auscultar",        0.40, 3, EMO_RESONANCE), \
+W("inyectar",         0.45, 3, EMO_TRAUMA), \
+/* === MATERIALISMO DE NERUDA === */ \
+W("madera",           0.35, 3, EMO_TENDERNESS), \
+W("cobre",            0.35, 2, EMO_VOID), \
+W("harina",           0.25, 3, EMO_TENDERNESS), \
+W("lana",             0.25, 2, EMO_TENDERNESS), \
+W("algodón",          0.25, 3, EMO_TENDERNESS), \
+W("seda",             0.30, 2, EMO_DESIRE), \
+W("cuero",            0.35, 2, EMO_VOID), \
+W("mimbre",           0.25, 2, EMO_TENDERNESS), \
+W("arpillera",        0.30, 4, EMO_VOID), \
+W("latón",            0.30, 2, EMO_VOID), \
+W("bronce",           0.40, 2, EMO_VOID), \
+W("alambre",          0.30, 3, EMO_VOID), \
+W("resina",           0.30, 3, EMO_RESONANCE), \
+W("betún",            0.30, 2, EMO_VOID), \
+W("trapo",            0.20, 2, EMO_VOID), \
+/* === MONOSÍLABOS & SUSTANCIAS DE CONTRASTE === */ \
+W("hiel",             0.45, 1, EMO_TRAUMA), \
+W("barro",            0.30, 2, EMO_VOID), \
+W("lodo",             0.30, 2, EMO_VOID), \
+W("grasa",            0.30, 2, EMO_VOID), \
+W("orín",             0.30, 2, EMO_VOID), \
+W("sebo",             0.25, 2, EMO_VOID), \
+W("pus",              0.40, 1, EMO_TRAUMA), \
+W("cal viva",         0.45, 3, EMO_RAGE), \
+W("légamo",           0.30, 3, EMO_VOID), \
+W("cisco",            0.25, 2, EMO_VOID), \
+/* === NERUDA — VERBOS MATERIALES === */ \
+W("amasar",           0.35, 3, EMO_TENDERNESS), \
+W("moldear",          0.35, 3, EMO_TENDERNESS), \
+W("tejer",            0.30, 2, EMO_TENDERNESS), \
+W("remendar",         0.30, 3, EMO_TENDERNESS), \
+W("encalar",          0.30, 3, EMO_VOID), \
+W("curtir",           0.35, 2, EMO_VOID), \
+W("forjar",           0.40, 2, EMO_RAGE), \
+W("soldar",           0.35, 2, EMO_VOID), \
+W("lijar",            0.25, 2, EMO_VOID), \
+W("engarzar",         0.30, 3, EMO_RESONANCE), \
+W("barnizar",         0.25, 3, EMO_VOID), \
+W("zurcir",           0.30, 2, EMO_TENDERNESS), \
+/* === TRES REGISTROS — BORGES/LORCA/NERUDA MEZCLADOS === */ \
+W("hexágono",         0.50, 4, EMO_RESONANCE), \
+W("encrucijada",      0.45, 5, EMO_JULIA), \
+W("espiral",          0.50, 3, EMO_RESONANCE), \
+W("sortilegio",       0.50, 4, EMO_RESONANCE), \
+W("talismán",         0.45, 3, EMO_RESONANCE), \
+W("quejido",          0.50, 3, EMO_GRIEF), \
+W("escalofrío",       0.50, 5, EMO_TRAUMA), \
+W("desgarro",         0.55, 3, EMO_TRAUMA), \
+W("desamparo",        0.60, 4, EMO_JULIA), \
+W("intemperie",       0.55, 4, EMO_JULIA), \
+W("estropajo",        0.25, 4, EMO_VOID), \
+W("badajo",           0.30, 3, EMO_VOID), \
+W("cerrojo",          0.30, 3, EMO_VOID), \
+W("bisagra",          0.25, 3, EMO_VOID), \
+W("aldaba",           0.30, 3, EMO_VOID), \
+W("pasador",          0.25, 3, EMO_VOID), \
+W("picaporte",        0.25, 4, EMO_VOID), \
+W("pestillo",         0.25, 3, EMO_VOID), \
+W("empuñadura",       0.30, 5, EMO_VOID), \
+W("calambre",         0.40, 3, EMO_TRAUMA), \
+W("raspadura",        0.25, 3, EMO_VOID), \
+W("serrín",           0.20, 2, EMO_VOID), \
+W("astilla",          0.30, 3, EMO_TRAUMA), \
+W("viruta",           0.20, 3, EMO_VOID), \
+W("remache",          0.25, 3, EMO_VOID), \
+W("garfio",           0.35, 2, EMO_RAGE), \
+W("eslabón",          0.30, 3, EMO_RESONANCE), \
+W("yunque",           0.40, 2, EMO_RAGE), \
+W("fragua",           0.40, 2, EMO_RAGE), \
+W("hornacina",        0.30, 4, EMO_VOID), \
+W("candil",           0.25, 2, EMO_TENDERNESS), \
+W("pábilo",           0.25, 3, EMO_VOID), \
 /* END */

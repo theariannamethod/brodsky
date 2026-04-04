@@ -1,5 +1,5 @@
 /* inhale/en.h — English heavy vocabulary for brodsky.c
- * 500 words. Latinisms, polysyllables, Brodsky's actual lexicon.
+ * 650 words. Latinisms, polysyllables, Brodsky's actual lexicon.
  * Each word: text, mass, syllables, emotion, consonant_density (precomputed)
  */
 
@@ -528,4 +528,163 @@ W("sepulcher",       0.60, 3, EMO_GRIEF), \
 W("ossuary",         0.55, 4, EMO_GRIEF), \
 W("excommunication", 0.60, 6, EMO_TRAUMA), \
 W("tabernacle",      0.55, 4, EMO_VOID), \
+/* === MODERN/URBAN — the century Brodsky inhabited === */ \
+W("subway",          0.45, 2, EMO_VOID), \
+W("asphalt",         0.50, 2, EMO_VOID), \
+W("neon",            0.40, 2, EMO_VOID), \
+W("billboard",       0.45, 2, EMO_VOID), \
+W("antenna",         0.45, 3, EMO_VOID), \
+W("satellite",       0.50, 3, EMO_RESONANCE), \
+W("escalator",       0.45, 4, EMO_VOID), \
+W("concrete",        0.50, 2, EMO_VOID), \
+W("diesel",          0.40, 2, EMO_VOID), \
+W("plastic",         0.35, 2, EMO_VOID), \
+W("aluminum",        0.40, 4, EMO_VOID), \
+W("fiberglass",      0.40, 3, EMO_VOID), \
+W("silicon",         0.45, 3, EMO_RESONANCE), \
+W("fluorescent",     0.45, 3, EMO_VOID), \
+W("transistor",      0.50, 3, EMO_RESONANCE), \
+W("turbine",         0.50, 2, EMO_VOID), \
+W("generator",       0.45, 4, EMO_VOID), \
+W("transformer",     0.50, 3, EMO_RESONANCE), \
+W("overpass",        0.45, 3, EMO_VOID), \
+W("underpass",       0.40, 3, EMO_VOID), \
+W("crosswalk",       0.40, 2, EMO_VOID), \
+W("boulevard",       0.50, 3, EMO_JULIA), \
+W("tenement",        0.50, 3, EMO_VOID), \
+W("smokestacks",     0.50, 2, EMO_VOID), \
+/* === VERBS OF PERCEPTION — what Brodsky's eye does === */ \
+W("perceive",        0.50, 2, EMO_RESONANCE), \
+W("overhear",        0.45, 3, EMO_RESONANCE), \
+W("glimpse",         0.45, 1, EMO_JULIA), \
+W("squint",          0.40, 1, EMO_VOID), \
+W("grope",           0.40, 1, EMO_TRAUMA), \
+W("stumble",         0.40, 2, EMO_TRAUMA), \
+W("fumble",          0.35, 2, EMO_VOID), \
+W("stammer",         0.45, 2, EMO_TRAUMA), \
+W("mutter",          0.40, 2, EMO_VOID), \
+W("shudder",         0.50, 2, EMO_TRAUMA), \
+W("flinch",          0.45, 1, EMO_TRAUMA), \
+W("wince",           0.40, 1, EMO_TRAUMA), \
+W("gaze",            0.35, 1, EMO_JULIA), \
+W("scrutinize",      0.50, 3, EMO_VOID), \
+W("discern",         0.50, 2, EMO_RESONANCE), \
+W("recollect",       0.50, 3, EMO_JULIA), \
+/* === CONNECTIVE TISSUE — bureaucratic syntax === */ \
+W("therefore",       0.35, 2, EMO_VOID), \
+W("moreover",        0.35, 3, EMO_VOID), \
+W("whereas",         0.30, 2, EMO_VOID), \
+W("inasmuch",        0.35, 3, EMO_VOID), \
+W("accordingly",     0.35, 4, EMO_VOID), \
+W("furthermore",     0.35, 3, EMO_VOID), \
+W("insofar",         0.30, 3, EMO_VOID), \
+W("heretofore",      0.35, 3, EMO_VOID), \
+W("whereby",         0.30, 2, EMO_VOID), \
+W("albeit",          0.35, 3, EMO_VOID), \
+W("namely",          0.30, 2, EMO_VOID), \
+W("hitherto",        0.35, 3, EMO_VOID), \
+/* === FOOD & DRINK — Brodsky's ordinary life === */ \
+W("coffee",          0.35, 2, EMO_JULIA), \
+W("vodka",           0.40, 2, EMO_JULIA), \
+W("herring",         0.35, 2, EMO_VOID), \
+W("bread",           0.30, 1, EMO_TENDERNESS), \
+W("vinegar",         0.35, 3, EMO_VOID), \
+W("mustard",         0.30, 2, EMO_VOID), \
+W("pepper",          0.30, 2, EMO_VOID), \
+W("porridge",        0.30, 2, EMO_VOID), \
+W("cabbage",         0.30, 2, EMO_VOID), \
+W("marmalade",       0.35, 3, EMO_VOID), \
+W("rye",             0.30, 1, EMO_VOID), \
+W("kvass",           0.30, 1, EMO_JULIA), \
+W("broth",           0.30, 1, EMO_TENDERNESS), \
+W("crust",           0.30, 1, EMO_VOID), \
+/* === CLOTHING — what the exile wears === */ \
+W("overcoat",        0.50, 3, EMO_JULIA), \
+W("galosh",          0.35, 2, EMO_VOID), \
+W("lapel",           0.40, 2, EMO_VOID), \
+W("cufflink",        0.35, 2, EMO_VOID), \
+W("suspender",       0.40, 3, EMO_VOID), \
+W("collar",          0.35, 2, EMO_VOID), \
+W("buttonhole",      0.35, 3, EMO_VOID), \
+W("epaulette",       0.45, 3, EMO_VOID), \
+W("gabardine",       0.40, 3, EMO_VOID), \
+W("trouser",         0.35, 2, EMO_VOID), \
+W("mackintosh",      0.45, 3, EMO_JULIA), \
+W("waistcoat",       0.40, 2, EMO_VOID), \
+/* === MEDICAL VERBS — the body as administered === */ \
+W("diagnose",        0.55, 3, EMO_TRAUMA), \
+W("amputate",        0.60, 3, EMO_TRAUMA), \
+W("anesthetize",     0.55, 4, EMO_VOID), \
+W("resuscitate",     0.55, 4, EMO_RESONANCE), \
+W("hemorrhaging",    0.65, 4, EMO_TRAUMA), \
+W("inoculate",       0.50, 4, EMO_VOID), \
+W("administer",      0.50, 4, EMO_VOID), \
+W("prescribe",       0.45, 2, EMO_VOID), \
+W("palpitate",       0.55, 3, EMO_TRAUMA), \
+W("atrophy",         0.55, 3, EMO_TRAUMA), \
+/* === MONOSYLLABLES FOR CONTRAST — grit in the gears === */ \
+W("grit",            0.35, 1, EMO_VOID), \
+W("swill",           0.30, 1, EMO_VOID), \
+W("blight",          0.45, 1, EMO_TRAUMA), \
+W("smog",            0.35, 1, EMO_VOID), \
+W("scab",            0.40, 1, EMO_TRAUMA), \
+W("clot",            0.40, 1, EMO_TRAUMA), \
+W("rag",             0.25, 1, EMO_VOID), \
+W("rut",             0.30, 1, EMO_VOID), \
+W("mire",            0.35, 1, EMO_VOID), \
+W("silt",            0.30, 1, EMO_VOID), \
+W("scum",            0.35, 1, EMO_VOID), \
+W("gall",            0.40, 1, EMO_TRAUMA), \
+W("dint",            0.25, 1, EMO_VOID), \
+W("burr",            0.25, 1, EMO_VOID), \
+W("caulk",           0.30, 1, EMO_VOID), \
+W("chaff",           0.25, 1, EMO_VOID), \
+W("spore",           0.30, 1, EMO_VOID), \
+W("suet",            0.25, 1, EMO_VOID), \
+W("tripe",           0.30, 1, EMO_VOID), \
+W("tallow",          0.30, 2, EMO_VOID), \
+/* === BUREAUCRATIC/LEGAL — the empire's paperwork === */ \
+W("memorandum",      0.50, 4, EMO_VOID), \
+W("affidavit",       0.50, 4, EMO_VOID), \
+W("requisition",     0.50, 4, EMO_VOID), \
+W("subcommittee",    0.50, 4, EMO_VOID), \
+W("adjudicate",      0.50, 4, EMO_VOID), \
+W("promulgate",      0.50, 3, EMO_VOID), \
+W("plenipotentiary", 0.55, 6, EMO_VOID), \
+W("ratification",    0.50, 5, EMO_VOID), \
+W("tribunal",        0.55, 3, EMO_TRAUMA), \
+W("deposition",      0.50, 4, EMO_VOID), \
+W("notarize",        0.40, 3, EMO_VOID), \
+W("protocol",        0.50, 3, EMO_VOID), \
+W("ordinance",       0.50, 3, EMO_VOID), \
+W("statute",         0.45, 2, EMO_VOID), \
+W("amendment",       0.45, 3, EMO_VOID), \
+W("quorum",          0.45, 2, EMO_VOID), \
+W("convene",         0.45, 2, EMO_VOID), \
+W("stipulate",       0.45, 3, EMO_VOID), \
+W("ratify",          0.45, 3, EMO_VOID), \
+/* === ADDITIONAL BRODSKY — reaching 650 === */ \
+W("acquittal",       0.55, 3, EMO_VOID), \
+W("inventory",       0.45, 4, EMO_VOID), \
+W("communique",      0.50, 3, EMO_VOID), \
+W("commissariat",    0.55, 4, EMO_VOID), \
+W("apparatus",       0.55, 4, EMO_VOID), \
+W("municipality",    0.50, 6, EMO_VOID), \
+W("cadastral",       0.45, 3, EMO_VOID), \
+W("cartouche",       0.50, 2, EMO_VOID), \
+W("vestibule",       0.45, 3, EMO_VOID), \
+W("administrate",    0.50, 4, EMO_VOID), \
+W("dossier",         0.45, 2, EMO_VOID), \
+W("gazette",         0.40, 2, EMO_VOID), \
+W("provenance",      0.50, 3, EMO_VOID), \
+W("sinew",           0.40, 2, EMO_TRAUMA), \
+W("marrow",          0.45, 2, EMO_TRAUMA), \
+W("pylorus",         0.50, 3, EMO_TRAUMA), \
+W("precipice",       0.55, 3, EMO_TRAUMA), \
+W("cadastre",        0.45, 2, EMO_VOID), \
+W("declassify",      0.50, 4, EMO_VOID), \
+W("adjournment",     0.50, 3, EMO_VOID), \
+W("moratorium",      0.50, 5, EMO_VOID), \
+W("recidivism",      0.50, 4, EMO_VOID), \
+W("armistice",       0.55, 3, EMO_VOID), \
 /* END */
