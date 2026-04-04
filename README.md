@@ -10,20 +10,53 @@
 A poetic organism that speaks in haiku. Five languages. One C file. Zero weights.
 
 ```
-brodsky> exile and empire
+brodsky> skull cathedral empire exile
 
-  [1]  julia=0.00  WALK
-  perpendicular
-  parenthesis lagoon skull
-  cathedral ash
+  [1]  julia=0.00
+  infinity
+  undertow bereavement death
+  surrender remorse
 
-  [2]  julia=0.13  RUN
-  manuscript beneath
-  deterioration salt
-  displacement birch
+  [2]  julia=0.12
+  antimatter skull
+  radiateur sarcophagus
+  enjambment exile
+
+  [3]  julia=0.25
+  wool disintegrate
+  sovereignty vector spine
+  desolation when
 ```
 
-Brodsky is mechanical. Deliberately heavy. Like Rammstein, but in haiku. He prefers "perpendicular" over "straight", "deterioration" over "decay", "consciousness" over "mind". The constraint is 5-7-5. The heaviness is in the words.
+```
+brodsky> империя и изгнание
+
+  [3]  julia=0.24
+  перпендикуляр
+  изгнание параллель
+  невозвращенец
+
+  [4]  julia=0.36
+  безвозвратность ртуть
+  citerne паводок допрос
+  перила ничто --
+```
+
+```
+brodsky> גלות ומוות
+
+  [3]  julia=0.22
+  דם אלמוות לוע
+  להתפורר אבל צור
+  חרדה חומה
+
+  [4]  julia=0.33
+  מזוודה בית
+  התפוררות בשום מקום
+  מרפסת מבול --
+```
+
+Brodsky is mechanical. Deliberately heavy. Like Rammstein, but in haiku. He prefers "perpendicular" over "straight", "deterioration" over "decay", "antimatter" over "nothing". The constraint is 5-7-5. The heaviness is in the words. Through every language, another bleeds — `citerne` in Russian, `radiateur` in English, `enfer` in Spanish.
 
 ---
 
