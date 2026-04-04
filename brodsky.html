@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRODSKY</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #0a0a0a;
+    color: #aaa;
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 640px;
+    padding: 60px 20px 120px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    color: #555;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 10px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-variant: small-caps;
+}
+
+.epigraph {
+    color: #333;
+    font-size: 11px;
+    font-style: italic;
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+
+#output {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.cycle {
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #1a1a1a;
+}
+
+.cycle:last-child {
+    border-bottom: none;
+}
+
+.cycle-meta {
+    color: #333;
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+}
+
+.haiku {
+    margin: 20px 0;
+    line-height: 2.0;
+}
+
+.haiku .line {
+    display: block;
+    min-height: 1.8em;
+}
+
+.trauma { color: #c44; }
+.joy { color: #cc8; }
+.grief { color: #68c; }
+.resonance { color: #6cc; }
+.desire { color: #c6c; }
+.void { color: #666; }
+.rage { color: #e66; }
+.tenderness { color: #6a6; }
+.julia { color: #c8f; }
+
+.dash {
+    color: #333;
+    opacity: 0.6;
+}
+
+.meta-line {
+    color: #2a2a2a;
+    font-size: 10px;
+    margin-top: 12px;
+    letter-spacing: 1px;
+}
+
+.input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0a0a0a;
+    border-top: 1px solid #1a1a1a;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.input-wrap {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.prompt-label {
+    color: #333;
+    font-size: 12px;
+    white-space: nowrap;
+    user-select: none;
+}
+
+#prompt {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #222;
+    color: #aaa;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    padding: 6px 0;
+    outline: none;
+    caret-color: #555;
+}
+
+#prompt::placeholder {
+    color: #2a2a2a;
+}
+
+#prompt:focus {
+    border-bottom-color: #444;
+}
+
+.footer {
+    color: #1a1a1a;
+    font-size: 10px;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    letter-spacing: 1px;
+    position: fixed;
+    bottom: 56px;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+}
+
+.loading {
+    color: #222;
+    font-size: 11px;
+    letter-spacing: 3px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+}
+
+.error-msg {
+    color: #533;
+    font-size: 11px;
+    margin-top: 8px;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>brodsky</h1>
+    <div class="epigraph">yet until brown clay has been crammed down my larynx</div>
+    <div id="output"></div>
+</div>
+
+<div class="footer">yet until brown clay has been crammed down my larynx</div>
+
+<div class="input-area">
+    <div class="input-wrap">
+        <span class="prompt-label">brodsky&gt;</span>
+        <input type="text" id="prompt" placeholder="speak" autocomplete="off" autofocus>
+    </div>
+</div>
+
+<script>
+(function() {
+    var output = document.getElementById('output');
+    var prompt = document.getElementById('prompt');
+    var cycleCount = 0;
+    var serverUrl = 'http://localhost:3003';
+
+    function createHaikuHtml(lines, emotion, hasEnj) {
+        var h = '<div class="haiku">';
+        for (var i = 0; i < lines.length; i++) {
+            h += '<span class="line">';
+            h += lines[i];
+            if (i === lines.length - 1 && hasEnj) {
+                h += ' <span class="dash">&mdash;</span>';
+            }
+            h += '</span>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function addCycle(html, meta) {
+        cycleCount++;
+        var div = document.createElement('div');
+        div.className = 'cycle';
+        var metaHtml = '<div class="cycle-meta">';
+        if (meta) {
+            metaHtml += meta;
+        } else {
+            metaHtml += 'cycle ' + cycleCount;
+        }
+        metaHtml += '</div>';
+        div.innerHTML = metaHtml + html;
+        output.appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function showLoading() {
+        var div = document.createElement('div');
+        div.className = 'loading';
+        div.id = 'loading';
+        div.textContent = '. . .';
+        output.appendChild(div);
+    }
+
+    function hideLoading() {
+        var el = document.getElementById('loading');
+        if (el) el.remove();
+    }
+
+    function showError(msg) {
+        hideLoading();
+        var div = document.createElement('div');
+        div.className = 'error-msg';
+        div.textContent = msg;
+        output.appendChild(div);
+        setTimeout(function() { div.remove(); }, 5000);
+    }
+
+    // Parse HTML response from brodsky web server
+    function parseServerHtml(html) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(html, 'text/html');
+
+        // Extract meta info
+        var metaEl = doc.querySelector('.meta');
+        var metaText = metaEl ? metaEl.textContent : '';
+
+        // Extract haiku divs
+        var haikus = doc.querySelectorAll('.haiku');
+        var haikuHtml = '';
+        for (var i = 0; i < haikus.length; i++) {
+            haikuHtml += haikus[i].outerHTML;
+        }
+
+        return { meta: metaText, html: haikuHtml };
+    }
+
+    function fetchCycle(inputText) {
+        showLoading();
+        prompt.disabled = true;
+
+        // The brodsky web server responds to any GET with a generated cycle
+        // We pass the prompt as a query parameter (server may ignore it)
+        var url = serverUrl + (inputText ? '?prompt=' + encodeURIComponent(inputText) : '');
+
+        fetch(url, {
+            method: 'GET',
+            mode: 'cors'
+        })
+        .then(function(resp) { return resp.text(); })
+        .then(function(html) {
+            hideLoading();
+            prompt.disabled = false;
+            prompt.focus();
+
+            var parsed = parseServerHtml(html);
+            if (parsed.html) {
+                addCycle(parsed.html, parsed.meta);
+            } else {
+                // fallback: show raw response
+                addCycle('<div class="haiku"><span class="line void">' +
+                    html.replace(/<[^>]*>/g, '').substring(0, 500) +
+                    '</span></div>', null);
+            }
+        })
+        .catch(function(err) {
+            hideLoading();
+            prompt.disabled = false;
+            prompt.focus();
+            // Server not running — show a pre-generated poem
+            showPregenerated(inputText);
+        });
+    }
+
+    // Pre-generated poems for when server is not running
+    var pregenerated = [
+        {
+            prompt: 'exile',
+            meta: 'cycle &middot; spring &middot; julia 0.31',
+            html:
+                '<div class="haiku">' +
+                '<span class="line"><span class="void">infinity</span></span>' +
+                '<span class="line"><span class="trauma">glacier</span> <span class="grief">contaminate</span> <span class="trauma">death</span></span>' +
+                '<span class="line"><span class="void">disintegrate</span> <span class="tenderness">wool</span></span>' +
+                '</div>' +
+                '<div class="haiku">' +
+                '<span class="line"><span class="resonance">reverberate</span> <span class="trauma">skull</span></span>' +
+                '<span class="line"><span class="grief">requiem</span> <span class="desire">stupeur</span> <span class="julia">exile</span></span>' +
+                '<span class="line"><span class="julia">translation</span> <span class="void">membrane</span></span>' +
+                '</div>' +
+                '<div class="haiku">' +
+                '<span class="line"><span class="rage">confiscate</span> <span class="trauma">pelvis</span></span>' +
+                '<span class="line"><span class="resonance">metamorphosis</span> <span class="void">empire</span></span>' +
+                '<span class="line"><span class="trauma">vertebra</span> <span class="grief">submerge</span> <span class="dash">&mdash;</span></span>' +
+                '</div>'
+        },
+        {
+            prompt: 'skull cathedral',
+            meta: 'cycle &middot; spring &middot; julia 0.22',
+            html:
+                '<div class="haiku">' +
+                '<span class="line"><span class="resonance">nominative</span> <span class="trauma">skull</span></span>' +
+                '<span class="line"><span class="void">accelerate</span> <span class="resonance">parallel</span></span>' +
+                '<span class="line"><span class="void">telephone</span> <span class="trauma">larynx</span></span>' +
+                '</div>' +
+                '<div class="haiku">' +
+                '<span class="line"><span class="trauma">trachea</span> <span class="void">gargoyle</span></span>' +
+                '<span class="line"><span class="resonance">metamorphosis</span> <span class="trauma">ulna</span></span>' +
+                '<span class="line"><span class="void">amphitheater</span> <span class="dash">&mdash;</span></span>' +
+                '</div>' +
+                '<div class="haiku">' +
+                '<span class="line"><span class="void">aqueduct</span> <span class="void">empire</span></span>' +
+                '<span class="line"><span class="desire">exhaler</span> <span class="resonance">parenthesis</span></span>' +
+                '<span class="line"><span class="grief">liturgy</span> <span class="trauma">gangrene</span> <span class="dash">&mdash;</span></span>' +
+                '</div>'
+        },
+        {
+            prompt: 'love',
+            meta: 'cycle &middot; spring &middot; julia 0.18',
+            html:
+                '<div class="haiku">' +
+                '<span class="line"><span class="resonance">cartography</span> <span class="trauma">death</span></span>' +
+                '<span class="line"><span class="julia">transubstantiate</span> <span class="trauma">gangrene</span></span>' +
+                '<span class="line"><span class="resonance">intersection</span> <span class="trauma">skull</span></span>' +
+                '</div>' +
+                '<div class="haiku">' +
+                '<span class="line"><span class="void">accelerate</span> <span class="void">through</span></span>' +
+                '<span class="line"><span class="trauma">esophagus</span> <span class="desire">veuve</span> <span class="void">empire</span></span>' +
+                '<span class="line"><span class="grief">mausoleum</span> <span class="trauma">bone</span></span>' +
+                '</div>'
+        },
+        {
+            prompt: null,
+            meta: 'cycle &middot; spring &middot; julia 0.36',
+            html:
+                '<div class="haiku">' +
+                '<span class="line"><span class="trauma">колоннада</span> <span class="trauma">смерть</span></span>' +
+                '<span class="line"><span class="void">накапливаться</span> <span class="void">собор</span></span>' +
+                '<span class="line"><span class="void">отсутствие</span> <span class="trauma">кость</span></span>' +
+                '</div>' +
+                '<div class="haiku">' +
+                '<span class="line"><span class="julia">галлюцинация</span></span>' +
+                '<span class="line"><span class="void">империя</span> <span class="julia">разлука</span></span>' +
+                '<span class="line"><span class="void">балюстрада</span> <span class="void">пыль</span></span>' +
+                '</div>' +
+                '<div class="haiku">' +
+                '<span class="line"><span class="void">перила</span> <span class="grief">невод</span></span>' +
+                '<span class="line"><span class="void">неподвижность</span> <span class="void">коридор</span></span>' +
+                '<span class="line"><span class="grief">промозглость</span> <span class="void">вползать</span> <span class="dash">&mdash;</span></span>' +
+                '</div>'
+        },
+        {
+            prompt: null,
+            meta: 'cycle &middot; saturn &middot; julia 0.22',
+            html:
+                '<div class="haiku">' +
+                '<span class="line"><span class="grief">לוח שנה</span> <span class="grief">תוגה</span></span>' +
+                '<span class="line"><span class="void">anéantir</span> <span class="trauma">מגפה</span></span>' +
+                '<span class="line"><span class="resonance">תשובה</span> <span class="grief">בית</span> <span class="trauma">מוות</span></span>' +
+                '</div>'
+        }
+    ];
+
+    var pregenIndex = 0;
+
+    function showPregenerated(inputText) {
+        // Try to find a matching pre-generated poem
+        var match = null;
+        if (inputText) {
+            var lower = inputText.toLowerCase().trim();
+            for (var i = 0; i < pregenerated.length; i++) {
+                if (pregenerated[i].prompt && pregenerated[i].prompt.toLowerCase() === lower) {
+                    match = pregenerated[i];
+                    break;
+                }
+            }
+        }
+        if (!match) {
+            match = pregenerated[pregenIndex % pregenerated.length];
+            pregenIndex++;
+        }
+        addCycle(match.html, match.meta);
+    }
+
+    // On submit
+    prompt.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            var text = prompt.value.trim();
+            prompt.value = '';
+            fetchCycle(text);
+        }
+    });
+
+    // On load — show first pre-generated, also try server
+    setTimeout(function() {
+        fetchCycle('');
+    }, 300);
+
+})();
+</script>
+</body>
+</html>
