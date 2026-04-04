@@ -1,5 +1,5 @@
 /* inhale/en.h — English heavy vocabulary for brodsky.c
- * 810 words. Latinisms, polysyllables, Brodsky's actual lexicon.
+ * 941 words. Latinisms, polysyllables, Brodsky's actual lexicon.
  * Plath (domestic horror, female viscera), Celan (broken language, absence).
  * Each word: text, mass, syllables, emotion, consonant_density (precomputed)
  */
@@ -862,4 +862,168 @@ W("fibrous",         0.40, 2, EMO_VOID), \
 W("calcified",       0.45, 3, EMO_VOID), \
 W("serrated",        0.45, 3, EMO_VOID), \
 W("corrugated",      0.45, 4, EMO_VOID), \
+/* === RHYME PAIRS — death/breath family === */ \
+W("breath",          0.60, 1, EMO_TRAUMA), \
+W("wreath",          0.45, 1, EMO_GRIEF), \
+W("shibboleth",      0.55, 3, EMO_VOID), \
+/* === RHYME PAIRS — skull/hull family === */ \
+W("hull",            0.40, 1, EMO_VOID), \
+W("lull",            0.35, 1, EMO_VOID), \
+W("gull",            0.30, 1, EMO_VOID), \
+W("annul",           0.45, 2, EMO_VOID), \
+/* === RHYME PAIRS — bone/stone/throne family === */ \
+W("stone",           0.50, 1, EMO_VOID), \
+W("throne",          0.55, 1, EMO_VOID), \
+W("zone",            0.35, 1, EMO_VOID), \
+W("alone",           0.50, 2, EMO_JULIA), \
+W("atone",           0.45, 2, EMO_GRIEF), \
+W("disown",          0.50, 2, EMO_JULIA), \
+/* === RHYME PAIRS — spine/brine family === */ \
+W("shrine",          0.55, 1, EMO_RESONANCE), \
+W("vine",            0.35, 1, EMO_VOID), \
+W("decline",         0.50, 2, EMO_VOID), \
+W("divine",          0.55, 2, EMO_RESONANCE), \
+W("crystalline",     0.50, 3, EMO_RESONANCE), \
+W("borderline",      0.45, 3, EMO_JULIA), \
+/* === RHYME PAIRS — empire/mire family === */ \
+W("fire",            0.55, 1, EMO_TRAUMA), \
+W("wire",            0.35, 1, EMO_VOID), \
+W("expire",          0.55, 2, EMO_GRIEF), \
+W("transpire",       0.45, 3, EMO_VOID), \
+W("quagmire",        0.50, 2, EMO_VOID), \
+/* === RHYME PAIRS — exile/bile family === */ \
+W("guile",           0.40, 1, EMO_VOID), \
+W("aisle",           0.35, 1, EMO_VOID), \
+W("reconcile",       0.50, 3, EMO_JULIA), \
+W("defile",          0.50, 2, EMO_TRAUMA), \
+/* === RHYME PAIRS — dust/rust/crust family === */ \
+W("trust",           0.45, 1, EMO_JULIA), \
+W("disgust",         0.50, 2, EMO_RAGE), \
+W("combust",         0.45, 2, EMO_TRAUMA), \
+W("encrust",         0.40, 2, EMO_VOID), \
+/* === RHYME PAIRS — ash family === */ \
+W("crash",           0.40, 1, EMO_TRAUMA), \
+W("gnash",           0.40, 1, EMO_RAGE), \
+W("clash",           0.40, 1, EMO_RAGE), \
+W("lash",            0.35, 1, EMO_TRAUMA), \
+W("gash",            0.45, 1, EMO_TRAUMA), \
+/* === RHYME PAIRS — salt/basalt family === */ \
+W("vault",           0.50, 1, EMO_VOID), \
+W("fault",           0.45, 1, EMO_GRIEF), \
+W("halt",            0.40, 1, EMO_VOID), \
+W("cobalt",          0.45, 2, EMO_VOID), \
+W("exalt",           0.45, 2, EMO_RESONANCE), \
+/* === RHYME PAIRS — night/blight family === */ \
+W("night",           0.50, 1, EMO_VOID), \
+W("sight",           0.40, 1, EMO_RESONANCE), \
+W("flight",          0.45, 1, EMO_JULIA), \
+W("plight",          0.50, 1, EMO_GRIEF), \
+W("frostbite",       0.50, 2, EMO_TRAUMA), \
+/* === RHYME PAIRS — blood family === */ \
+W("blood",           0.60, 1, EMO_TRAUMA), \
+W("flood",           0.50, 1, EMO_TRAUMA), \
+W("mud",             0.30, 1, EMO_VOID), \
+/* === RHYME PAIRS — word family === */ \
+W("word",            0.45, 1, EMO_RESONANCE), \
+W("bird",            0.35, 1, EMO_JULIA), \
+W("third",           0.30, 1, EMO_VOID), \
+W("absurd",          0.45, 2, EMO_VOID), \
+W("unheard",         0.45, 2, EMO_GRIEF), \
+W("herd",            0.30, 1, EMO_VOID), \
+/* === RHYME PAIRS — tongue family === */ \
+W("tongue",          0.50, 1, EMO_RESONANCE), \
+W("lung",            0.40, 1, EMO_TRAUMA), \
+W("hung",            0.35, 1, EMO_TRAUMA), \
+W("rung",            0.30, 1, EMO_VOID), \
+W("wrung",           0.35, 1, EMO_GRIEF), \
+/* === RHYME PAIRS — stone/groan/drone family === */ \
+W("moan",            0.40, 1, EMO_GRIEF), \
+W("blown",           0.35, 1, EMO_VOID), \
+W("overthrown",      0.55, 3, EMO_TRAUMA), \
+/* === RHYME PAIRS — corrode/erode family === */ \
+W("code",            0.35, 1, EMO_VOID), \
+W("load",            0.30, 1, EMO_VOID), \
+W("abode",           0.40, 2, EMO_JULIA), \
+/* === RHYME PAIRS — void/thyroid family === */ \
+W("devoid",          0.50, 2, EMO_VOID), \
+/* === RHYME PAIRS — bell/shell family === */ \
+W("shell",           0.40, 1, EMO_VOID), \
+W("knell",           0.45, 1, EMO_GRIEF), \
+W("farewell",        0.50, 2, EMO_JULIA), \
+W("citadel",         0.55, 3, EMO_VOID), \
+/* === RHYME PAIRS — grime/lime family === */ \
+W("slime",           0.35, 1, EMO_VOID), \
+W("paradigm",        0.55, 3, EMO_RESONANCE), \
+/* === RHYME PAIRS — tide/stride family === */ \
+W("stride",          0.40, 1, EMO_VOID), \
+W("reside",          0.40, 2, EMO_VOID), \
+W("subside",         0.45, 2, EMO_VOID), \
+W("divide",          0.45, 2, EMO_TRAUMA), \
+W("coincide",        0.45, 3, EMO_RESONANCE), \
+/* === RHYME PAIRS — trace/efface family === */ \
+W("grace",           0.45, 1, EMO_RESONANCE), \
+W("disgrace",        0.50, 2, EMO_GRIEF), \
+W("embrace",         0.50, 2, EMO_TENDERNESS), \
+W("birthplace",      0.45, 2, EMO_JULIA), \
+/* === RHYME PAIRS — haze/gaze family === */ \
+W("blaze",           0.45, 1, EMO_TRAUMA), \
+W("raze",            0.45, 1, EMO_TRAUMA), \
+W("malaise",         0.50, 2, EMO_VOID), \
+/* === RHYME PAIRS — thorn family === */ \
+W("scorn",           0.45, 1, EMO_RAGE), \
+W("forlorn",         0.55, 2, EMO_GRIEF), \
+W("stillborn",       0.60, 2, EMO_TRAUMA), \
+W("sworn",           0.40, 1, EMO_VOID), \
+/* === RHYME PAIRS — filth/pith family === */ \
+W("stealth",         0.45, 1, EMO_VOID), \
+W("wealth",          0.40, 1, EMO_VOID), \
+W("health",          0.40, 1, EMO_VOID), \
+/* === RHYME PAIRS — fog/smog family === */ \
+W("bog",             0.30, 1, EMO_VOID), \
+W("slog",            0.30, 1, EMO_VOID), \
+W("epilogue",        0.50, 3, EMO_GRIEF), \
+W("monolith",        0.55, 3, EMO_VOID), \
+/* === RHYME PAIRS — flint/splint/dint family === */ \
+W("glint",           0.35, 1, EMO_VOID), \
+W("imprint",         0.45, 2, EMO_RESONANCE), \
+W("labyrinth",       0.55, 3, EMO_RESONANCE), \
+/* === RHYME PAIRS — scab/slab family === */ \
+W("drab",            0.30, 1, EMO_VOID), \
+W("prefab",          0.35, 2, EMO_VOID), \
+/* === RHYME PAIRS — clot/rot family === */ \
+W("rot",             0.40, 1, EMO_TRAUMA), \
+W("knot",            0.35, 1, EMO_VOID), \
+/* === RHYME PAIRS — drought family === */ \
+W("snout",           0.35, 1, EMO_VOID), \
+W("devout",          0.45, 2, EMO_VOID), \
+/* === RHYME PAIRS — crib/rib family === */ \
+W("rib",             0.35, 1, EMO_TRAUMA), \
+/* === RHYME PAIRS — decompose family === */ \
+W("dispose",         0.45, 2, EMO_VOID), \
+W("disclose",        0.45, 2, EMO_VOID), \
+W("foreclose",       0.50, 2, EMO_VOID), \
+/* === RHYME PAIRS — submerge family === */ \
+W("dirge",           0.55, 1, EMO_GRIEF), \
+W("scourge",         0.55, 1, EMO_TRAUMA), \
+W("purge",           0.45, 1, EMO_TRAUMA), \
+W("surge",           0.45, 1, EMO_RESONANCE), \
+/* === RHYME PAIRS — dissolve/revolve family === */ \
+W("dissolve",        0.50, 2, EMO_VOID), \
+W("revolve",         0.45, 2, EMO_RESONANCE), \
+W("resolve",         0.50, 2, EMO_VOID), \
+W("absolve",         0.50, 2, EMO_RESONANCE), \
+W("evolve",          0.45, 2, EMO_RESONANCE), \
+/* === HEAVY RHYME-RICH ADDITIONS === */ \
+W("plague",          0.60, 1, EMO_TRAUMA), \
+W("vague",           0.35, 1, EMO_VOID), \
+W("scaffold",        0.50, 2, EMO_TRAUMA), \
+W("shroud",          0.50, 1, EMO_GRIEF), \
+W("psalm",           0.50, 1, EMO_GRIEF), \
+W("balm",            0.30, 1, EMO_TENDERNESS), \
+W("embalm",          0.50, 2, EMO_GRIEF), \
+W("realm",           0.45, 1, EMO_VOID), \
+W("womb",            0.55, 1, EMO_TRAUMA), \
+W("tomb",            0.55, 1, EMO_GRIEF), \
+W("entomb",          0.55, 2, EMO_GRIEF), \
+W("catacomb",        0.55, 3, EMO_GRIEF), \
 /* END */
