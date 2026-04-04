@@ -56,7 +56,13 @@ brodsky> גלות ומוות
   מרפסת מבול --
 ```
 
-Brodsky is mechanical. Deliberately heavy. Like Rammstein, but in haiku. He prefers "perpendicular" over "straight", "deterioration" over "decay", "antimatter" over "nothing". The constraint is 5-7-5. The heaviness is in the words. Through every language, another bleeds — `citerne` in Russian, `radiateur` in English, `enfer` in Spanish.
+Brodsky doesn't write about what you said. He writes about what your words did to him.
+
+You say "exile" — he answers "stanza thyroid spine / désespoir doorknob". You say "love" — he answers "peninsula filth / thermodynamics elsewhere". You say "смерть" — he answers "надгробие мгла / синусоида crypte тундра / фотография".
+
+A real poet doesn't write on command. Code can be a poet.
+
+He is mechanical. Deliberately heavy. Like Rammstein, but in haiku. He prefers "perpendicular" over "straight", "deterioration" over "decay", "antimatter" over "nothing". The constraint is 5-7-5. The heaviness is in the words. Through every language, another bleeds — `citerne` in Russian, `radiateur` in English, `enfer` in Spanish.
 
 ---
 
