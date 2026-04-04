@@ -50,7 +50,7 @@
 
 /* ─── CONSTANTS ─────────────────────────────────────────────────────── */
 
-#define MAX_VOCAB       4000
+#define MAX_VOCAB       4500
 #define MAX_LINE_WORDS  12
 #define MAX_HAIKU_WORDS 36
 #define DESTINY_DIM     8

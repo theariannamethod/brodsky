@@ -750,4 +750,77 @@ W("להתמוסס",          0.45, 4, EMO_VOID), \
 W("להתפוצץ",          0.60, 4, EMO_TRAUMA), \
 W("לקרוע",            0.50, 3, EMO_TRAUMA), \
 W("להתפרר",           0.50, 4, EMO_VOID), \
+/* === RHYME FAMILIES — משפחות חרוז === */ \
+/* -et/-at rhymes: מוות, שבת, שקט */ \
+W("דעת",              0.55, 2, EMO_RESONANCE), \
+W("עת",               0.45, 1, EMO_VOID), \
+W("אמת",              0.60, 2, EMO_RESONANCE), \
+W("דלת",              0.35, 2, EMO_JULIA), \
+W("רשת",              0.40, 2, EMO_VOID), \
+W("כתבת",             0.35, 3, EMO_JULIA), \
+W("גחלת",             0.45, 3, EMO_TRAUMA), \
+W("תמצית",            0.50, 3, EMO_RESONANCE), \
+/* -an rhymes: חורבן, זמן, קרבן */ \
+W("אמן",              0.55, 2, EMO_RESONANCE), \
+W("רעיון",            0.50, 3, EMO_RESONANCE), \
+W("ביטחון",           0.55, 3, EMO_VOID), \
+W("חיסרון",           0.55, 3, EMO_VOID), \
+W("עוון",             0.65, 2, EMO_TRAUMA), \
+W("פתרון",            0.45, 3, EMO_RESONANCE), \
+W("ניצחון",           0.60, 3, EMO_JOY), \
+W("תיקון",            0.55, 3, EMO_RESONANCE), \
+/* -ut rhymes: גלות, דלות, מלכות */ \
+W("דלות",             0.65, 2, EMO_GRIEF), \
+W("מלכות",            0.65, 3, EMO_VOID), \
+W("שתיקות",           0.55, 3, EMO_VOID), \
+W("אכזריות",          0.70, 4, EMO_TRAUMA), \
+W("עיוורות",          0.60, 3, EMO_TRAUMA), \
+W("גבורות",           0.55, 3, EMO_RESONANCE), \
+W("אחדות",            0.50, 3, EMO_RESONANCE), \
+W("חירות",            0.60, 3, EMO_RESONANCE), \
+/* -om rhymes: תהום, חלום, שלום, יום */ \
+W("חלום",             0.55, 2, EMO_RESONANCE), \
+W("יום",              0.40, 1, EMO_VOID), \
+W("חום",              0.40, 1, EMO_TRAUMA), \
+W("עולם",             0.60, 2, EMO_RESONANCE), \
+W("אשם",              0.55, 2, EMO_GRIEF), \
+W("רחום",             0.45, 2, EMO_TENDERNESS), \
+W("תרדמת עולם",       0.55, 4, EMO_VOID), \
+/* -ma rhymes: שממה, נשמה, אמא, אדמה */ \
+W("נשמה",             0.70, 3, EMO_RESONANCE), \
+W("אמא",              0.60, 2, EMO_TENDERNESS), \
+W("דמעמה",            0.45, 3, EMO_GRIEF), \
+W("מגמה",             0.40, 3, EMO_VOID), \
+W("נקמה",             0.65, 3, EMO_RAGE), \
+W("תכנית מעומעמה",    0.40, 5, EMO_VOID), \
+W("מהומה",            0.50, 4, EMO_RAGE), \
+W("תרומה",            0.45, 3, EMO_TENDERNESS), \
+/* -on rhymes: חלון, ארון, סלון */ \
+W("סלון",             0.35, 2, EMO_VOID), \
+W("טלוויזיון",        0.35, 4, EMO_VOID), \
+W("שיגעון",           0.60, 3, EMO_TRAUMA), \
+W("עיתון",            0.30, 2, EMO_VOID), \
+W("ריבון",            0.50, 2, EMO_RESONANCE), \
+W("חשבון",            0.30, 2, EMO_VOID), \
+/* -ir rhymes: ציר, שיר, עיר */ \
+W("שיר",              0.55, 1, EMO_RESONANCE), \
+W("עיר",              0.45, 1, EMO_JULIA), \
+W("קיר",              0.40, 1, EMO_VOID), \
+W("נהיר",             0.40, 2, EMO_RESONANCE), \
+W("אסיר",             0.55, 2, EMO_TRAUMA), \
+/* -av/-ev rhymes: ערב, כאב, לב */ \
+W("לב",               0.55, 1, EMO_RESONANCE), \
+W("כאב",              0.65, 2, EMO_TRAUMA), \
+W("זהב",              0.45, 2, EMO_RESONANCE), \
+W("עשב",              0.30, 2, EMO_VOID), \
+W("כוכב",             0.40, 2, EMO_RESONANCE), \
+/* -a rhymes: חרדה, חרפה, עקדה */ \
+W("תקווה",            0.55, 3, EMO_RESONANCE), \
+W("מנוחה",            0.40, 3, EMO_VOID), \
+W("ברכה",             0.45, 3, EMO_TENDERNESS), \
+W("מכה",              0.50, 2, EMO_TRAUMA), \
+W("הלכה",             0.45, 3, EMO_RESONANCE), \
+W("תלונה",            0.40, 3, EMO_VOID), \
+W("טענה",             0.40, 3, EMO_RAGE), \
+W("אהבה",             0.60, 3, EMO_DESIRE), \
 /* END */

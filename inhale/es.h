@@ -759,4 +759,76 @@ W("ahogar",           0.60, 3, EMO_TRAUMA), \
 W("emerger",          0.40, 3, EMO_RESONANCE), \
 W("derivar",          0.35, 3, EMO_VOID), \
 W("ondular",          0.30, 3, EMO_RESONANCE), \
+/* === FAMILIAS DE RIMA === */ \
+/* -erte rhymes: muerte, suerte, fuerte, inerte */ \
+W("suerte",           0.55, 2, EMO_JULIA), \
+W("fuerte",           0.50, 2, EMO_RAGE), \
+W("inerte",           0.55, 3, EMO_VOID), \
+W("advierte",         0.40, 3, EMO_VOID), \
+W("convierte",        0.45, 3, EMO_RESONANCE), \
+W("divierte",         0.35, 3, EMO_JOY), \
+/* -ilio rhymes: exilio, auxilio, idilio */ \
+W("auxilio",          0.50, 3, EMO_TRAUMA), \
+W("idilio",           0.45, 3, EMO_DESIRE), \
+W("concilio",         0.40, 3, EMO_VOID), \
+W("domicilio",        0.40, 4, EMO_JULIA), \
+/* -erio rhymes: imperio, misterio, cementerio, criterio */ \
+W("misterio",         0.60, 3, EMO_RESONANCE), \
+W("cementerio",       0.65, 4, EMO_GRIEF), \
+W("hemisferio",       0.50, 4, EMO_VOID), \
+W("criterio",         0.45, 3, EMO_VOID), \
+W("cautiverio",       0.55, 4, EMO_TRAUMA), \
+W("monasterio",       0.50, 4, EMO_VOID), \
+W("sahumerio",        0.40, 4, EMO_RESONANCE), \
+/* -ad rhymes: eternidad, soledad, verdad, libertad */ \
+W("verdad",           0.60, 2, EMO_RESONANCE), \
+W("ciudad",           0.50, 2, EMO_JULIA), \
+W("libertad",         0.65, 3, EMO_RESONANCE), \
+W("voluntad",         0.55, 3, EMO_RESONANCE), \
+W("crueldad",         0.65, 3, EMO_TRAUMA), \
+W("orfandad",         0.60, 3, EMO_GRIEF), \
+W("oscuridad",        0.60, 4, EMO_VOID), \
+W("dignidad",         0.50, 3, EMO_RESONANCE), \
+W("mitad",            0.40, 2, EMO_VOID), \
+W("tempestad",        0.55, 3, EMO_RAGE), \
+/* -into rhymes: laberinto, instinto, recinto, extinto */ \
+W("instinto",         0.55, 3, EMO_RESONANCE), \
+W("recinto",          0.45, 3, EMO_VOID), \
+W("extinto",          0.55, 3, EMO_VOID), \
+W("tinto",            0.30, 2, EMO_VOID), \
+W("distinto",         0.40, 3, EMO_VOID), \
+W("sucinto",          0.35, 3, EMO_VOID), \
+/* -angre/-ambre rhymes: sangre, hambre, alambre, calambre */ \
+W("estambre",         0.35, 3, EMO_VOID), \
+W("enjambre",         0.40, 3, EMO_VOID), \
+/* -ejo rhymes: espejo, reflejo, consejo, viejo */ \
+W("reflejo",          0.50, 3, EMO_RESONANCE), \
+W("consejo",          0.40, 3, EMO_VOID), \
+W("complejo",         0.45, 3, EMO_RESONANCE), \
+W("viejo",            0.50, 2, EMO_GRIEF), \
+W("parejo",           0.35, 3, EMO_VOID), \
+W("festejo",          0.35, 3, EMO_JOY), \
+W("azulejo",          0.35, 4, EMO_VOID), \
+/* -ombre rhymes: sombra, nombre, hombre */ \
+W("nombre",           0.45, 2, EMO_RESONANCE), \
+W("hombre",           0.50, 2, EMO_VOID), \
+W("costumbre",        0.40, 3, EMO_VOID), \
+W("lumbre",           0.40, 2, EMO_RESONANCE), \
+W("certidumbre",      0.45, 4, EMO_VOID), \
+W("podredumbre",      0.55, 4, EMO_TRAUMA), \
+W("incertidumbre",    0.55, 5, EMO_TRAUMA), \
+W("muchedumbre",      0.50, 4, EMO_VOID), \
+/* -encia rhymes: ausencia, existencia, silencio */ \
+W("violencia",        0.65, 3, EMO_RAGE), \
+W("paciencia",        0.45, 3, EMO_VOID), \
+W("conciencia",       0.55, 3, EMO_RESONANCE), \
+W("inocencia",        0.50, 4, EMO_TENDERNESS), \
+W("clemencia",        0.45, 3, EMO_TENDERNESS), \
+/* -ina rhymes: ruina, ceniza, resina */ \
+W("esquina",          0.35, 3, EMO_JULIA), \
+W("colina",           0.35, 3, EMO_JULIA), \
+W("neblina",          0.35, 3, EMO_VOID), \
+W("rutina",           0.35, 3, EMO_VOID), \
+W("espina",           0.40, 3, EMO_TRAUMA), \
+W("medicina",         0.40, 4, EMO_VOID), \
 /* END */

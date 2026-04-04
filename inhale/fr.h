@@ -753,4 +753,89 @@ W("case",             0.35, 1, EMO_JULIA), \
 W("couleuvre",        0.40, 2, EMO_VOID), \
 W("vaudou",           0.55, 2, EMO_RESONANCE), \
 W("tambour",          0.45, 2, EMO_RAGE), \
+/* === FAMILLES DE RIMES === */ \
+/* -ort rhymes: mort, sort, port, fort */ \
+W("sort",             0.60, 1, EMO_JULIA), \
+W("port",             0.45, 1, EMO_JULIA), \
+W("fort",             0.50, 1, EMO_VOID), \
+W("corps",            0.55, 1, EMO_TRAUMA), \
+W("accord",           0.45, 2, EMO_RESONANCE), \
+W("rapport",          0.40, 2, EMO_VOID), \
+W("transport",        0.45, 2, EMO_VOID), \
+W("effort",           0.50, 2, EMO_VOID), \
+W("ressort",          0.40, 2, EMO_VOID), \
+W("remord",           0.55, 2, EMO_GRIEF), \
+/* -il rhymes: exil, fil, profil, péril */ \
+W("fil",              0.35, 1, EMO_VOID), \
+W("profil",           0.40, 2, EMO_VOID), \
+W("péril",            0.55, 2, EMO_TRAUMA), \
+W("avril",            0.35, 2, EMO_JULIA), \
+W("fossile",          0.50, 2, EMO_VOID), \
+W("vigile",           0.40, 2, EMO_VOID), \
+/* -an/-en rhymes: néant, vent, sang, rang */ \
+W("vent",             0.45, 1, EMO_RESONANCE), \
+W("rang",             0.40, 1, EMO_VOID), \
+W("blanc",            0.35, 1, EMO_VOID), \
+W("enfant",           0.45, 2, EMO_TENDERNESS), \
+W("tourment",         0.60, 2, EMO_TRAUMA), \
+W("firmament",        0.50, 3, EMO_RESONANCE), \
+W("ossement",         0.55, 2, EMO_TRAUMA), \
+W("serment",          0.50, 2, EMO_RESONANCE), \
+W("châtiment",        0.60, 3, EMO_TRAUMA), \
+W("avènement",        0.50, 3, EMO_VOID), \
+/* -ule rhymes: crépuscule, minuscule, molécule */ \
+W("minuscule",        0.40, 3, EMO_VOID), \
+W("molécule",         0.45, 3, EMO_RESONANCE), \
+W("véhicule",         0.40, 3, EMO_VOID), \
+W("ridicule",         0.45, 3, EMO_VOID), \
+W("capsule",          0.40, 2, EMO_VOID), \
+W("particule",        0.45, 3, EMO_RESONANCE), \
+W("corpuscule",       0.50, 3, EMO_RESONANCE), \
+/* -ale rhymes: cathédrale, spirale, morale */ \
+W("spirale",          0.50, 2, EMO_RESONANCE), \
+W("morale",           0.45, 2, EMO_VOID), \
+W("finale",           0.50, 2, EMO_VOID), \
+W("infernale",        0.60, 3, EMO_TRAUMA), \
+W("fatale",           0.55, 2, EMO_TRAUMA), \
+W("verticale",        0.45, 3, EMO_RESONANCE), \
+/* -èbre/-èvre rhymes: vertèbre, ténèbre, fièvre */ \
+W("funèbre",          0.65, 2, EMO_GRIEF), \
+W("lèvre",            0.40, 1, EMO_DESIRE), \
+W("orfèvre",          0.45, 2, EMO_RESONANCE), \
+W("genièvre",         0.35, 2, EMO_VOID), \
+/* -ir rhymes: empire, soupir, avenir, souvenir, désir */ \
+W("soupir",           0.50, 2, EMO_JULIA), \
+W("avenir",           0.50, 3, EMO_RESONANCE), \
+W("souvenir",         0.55, 3, EMO_JULIA), \
+W("désir",            0.60, 2, EMO_DESIRE), \
+W("plaisir",          0.45, 2, EMO_DESIRE), \
+W("martyr",           0.60, 2, EMO_TRAUMA), \
+W("élixir",           0.50, 3, EMO_RESONANCE), \
+/* -oir rhymes: miroir, couloir, espoir, mémoire */ \
+W("espoir",           0.55, 2, EMO_RESONANCE), \
+W("mémoire",          0.60, 2, EMO_JULIA), \
+W("territoire",       0.55, 3, EMO_VOID), \
+W("répertoire",       0.45, 3, EMO_VOID), \
+W("grimoire",         0.55, 2, EMO_RESONANCE), \
+W("noire",            0.50, 1, EMO_VOID), \
+/* -eur rhymes: stupeur, torpeur, lueur, sueur */ \
+W("douleur",          0.70, 2, EMO_TRAUMA), \
+W("pâleur",           0.45, 2, EMO_VOID), \
+W("splendeur",        0.50, 2, EMO_RESONANCE), \
+W("profondeur",       0.55, 3, EMO_VOID), \
+W("lenteur",          0.40, 2, EMO_VOID), \
+W("grandeur",         0.50, 2, EMO_RESONANCE), \
+/* -ence/-ance rhymes: absence, errance, indifférence */ \
+W("silence",          0.60, 2, EMO_VOID), \
+W("violence",         0.65, 3, EMO_RAGE), \
+W("patience",         0.40, 2, EMO_VOID), \
+W("conscience",       0.55, 2, EMO_RESONANCE), \
+W("innocence",        0.45, 3, EMO_TENDERNESS), \
+W("permanence",       0.45, 3, EMO_VOID), \
+W("décadence",        0.55, 3, EMO_VOID), \
+/* -ume/-ume rhymes: bitume, brume, plume */ \
+W("plume",            0.35, 1, EMO_JULIA), \
+W("amertume",         0.55, 3, EMO_GRIEF), \
+W("coutume",          0.40, 2, EMO_VOID), \
+W("volume",           0.40, 2, EMO_VOID), \
 /* END */
