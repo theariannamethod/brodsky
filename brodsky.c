@@ -63,6 +63,11 @@
 #define EXHALE_COUNT    12
 #define MAX_PROPHECY    32
 
+/* ─── DOE-LITE PARLIAMENT ──────────────────────────────────────────── */
+
+#define DOE_EXPERTS     4
+#define DOE_RANK        4   /* low-rank: 4-dimensional vote */
+
 /* ─── CORPUS METAWEIGHTS ───────────────────────────────────────────── */
 
 #define CORPUS_BIGRAM_MAX   4096
@@ -135,6 +140,23 @@ typedef struct {
     int fulfilled_total;  /* running count of all fulfilled prophecies */
     int created_total;    /* running count of all created prophecies */
 } ProphecySystem;
+
+/* ─── DOE PARLIAMENT STRUCTS ───────────────────────────────────────── */
+
+typedef struct {
+    float bias[EMO_COUNT];     /* emotion preference per expert */
+    float mass_pref;           /* preferred mass range center */
+    float vitality;            /* 0-2: how alive this expert is */
+    float overload;            /* accumulated dominance pressure */
+    int   wins;                /* times this expert won */
+    int   alive;               /* 0 = dead (apoptosis) */
+} Expert;
+
+typedef struct {
+    Expert e[DOE_EXPERTS * 2]; /* room for mitosis */
+    int    n;                  /* current count, starts at 4 */
+    int    elections;          /* total elections held */
+} Parliament;
 
 /* ─── LANGUAGES ────────────────────────────────────────────────────── */
 
@@ -472,6 +494,12 @@ static void vec_normalize(float *v, int n) {
     mag = sqrtf(mag);
     if (mag > 1e-8f)
         for (int i = 0; i < n; i++) v[i] /= mag;
+}
+
+static float clampf(float x, float lo, float hi) {
+    if (x < lo) return lo;
+    if (x > hi) return hi;
+    return x;
 }
 
 /* ─── PLANETARY DISSONANCE ──────────────────────────────────────────── */
@@ -990,11 +1018,18 @@ typedef struct {
     /* prophecy system */
     ProphecySystem prophecy;
 
+    /* DOE-lite parliament */
+    Parliament parliament;
+
     /* total cycles across all sessions (persisted via spore) */
     int total_cycles;
 } Organism;
 
 static Organism org;
+
+/* forward declarations for parliament (defined after tension pairs) */
+static void parliament_init(Parliament *p);
+static int  parliament_alive_count(const Parliament *p);
 
 /* ─── ORGANISM INIT ─────────────────────────────────────────────────── */
 
@@ -1026,6 +1061,7 @@ static void organism_init(void) {
     hebbian_init();
     bigram_init();
     prophecy_init(&org.prophecy);
+    parliament_init(&org.parliament);
 }
 
 /* ─── INGEST USER PROMPT ────────────────────────────────────────────── */
@@ -1553,6 +1589,138 @@ static void tension_used(int a_idx, int b_idx) {
     }
 }
 
+/* ─── DOE-LITE PARLIAMENT FUNCTIONS ────────────────────────────────── */
+/*
+ * A compact democracy of LoRA-style experts that vote on word selection.
+ * From Q's DOE Parliament, but drunk and smaller.
+ * 4 experts, each with a personality:
+ *   Architect  — VOID, architecture, empire. Prefers mass > 0.6
+ *   Anatomist  — TRAUMA, body words. Prefers consonant_density > 0.5
+ *   Exile      — JULIA, exile/water/Venice. Boosted by julia field
+ *   Metronome  — RESONANCE, geometry/time. Prefers high syllable count
+ */
+
+static const char *expert_names[DOE_EXPERTS * 2] = {
+    "architect", "anatomist", "exile", "metronome",
+    "child-0", "child-1", "child-2", "child-3"
+};
+
+static void parliament_init(Parliament *p) {
+    memset(p, 0, sizeof(*p));
+    p->n = DOE_EXPERTS;
+    p->elections = 0;
+
+    /* Architect: VOID-loving, high mass */
+    memset(&p->e[0], 0, sizeof(Expert));
+    p->e[0].bias[EMO_VOID] = 0.5f;
+    p->e[0].mass_pref = 0.7f;
+    p->e[0].vitality = 1.0f;
+    p->e[0].alive = 1;
+
+    /* Anatomist: TRAUMA-loving, consonant-dense */
+    memset(&p->e[1], 0, sizeof(Expert));
+    p->e[1].bias[EMO_TRAUMA] = 0.5f;
+    p->e[1].bias[EMO_RAGE] = 0.3f;
+    p->e[1].mass_pref = 0.6f;
+    p->e[1].vitality = 1.0f;
+    p->e[1].alive = 1;
+
+    /* Exile: JULIA-loving, boosted by julia field */
+    memset(&p->e[2], 0, sizeof(Expert));
+    p->e[2].bias[EMO_JULIA] = 0.5f;
+    p->e[2].mass_pref = 0.5f;
+    p->e[2].vitality = 1.0f;
+    p->e[2].alive = 1;
+
+    /* Metronome: RESONANCE-loving, high syllables */
+    memset(&p->e[3], 0, sizeof(Expert));
+    p->e[3].bias[EMO_RESONANCE] = 0.5f;
+    p->e[3].mass_pref = 0.5f;
+    p->e[3].vitality = 1.0f;
+    p->e[3].alive = 1;
+}
+
+static float expert_vote(Expert *ex, int expert_idx, Word *w, float julia) {
+    if (!ex->alive) return 0.0f;
+    float vote = ex->bias[w->emotion] * ex->vitality;
+    /* mass preference: closer to preferred = higher vote */
+    vote += (1.0f - fabsf(w->mass - ex->mass_pref)) * 0.3f * ex->vitality;
+    /* Exile expert (index 2) boosted by julia */
+    if (expert_idx == 2)
+        vote *= (1.0f + julia * 1.5f);
+    return vote;
+}
+
+static float parliament_score(int idx) {
+    Word *w = &vocab[idx];
+    float total = 0.0f;
+    int n_alive = 0;
+
+    for (int i = 0; i < org.parliament.n; i++) {
+        if (!org.parliament.e[i].alive) continue;
+        float v = expert_vote(&org.parliament.e[i], i, w, org.julia);
+        total += v;
+        n_alive++;
+    }
+
+    if (n_alive == 0) return 0.0f;
+    return total / (float)n_alive;  /* average vote */
+}
+
+static void parliament_update(int winner_word) {
+    /* find which expert voted strongest for this word */
+    float best = -1.0f;
+    int best_i = -1;
+    for (int i = 0; i < org.parliament.n; i++) {
+        if (!org.parliament.e[i].alive) continue;
+        float v = expert_vote(&org.parliament.e[i], i, &vocab[winner_word], org.julia);
+        if (v > best) { best = v; best_i = i; }
+    }
+    if (best_i >= 0) {
+        org.parliament.e[best_i].wins++;
+        org.parliament.e[best_i].overload += 0.1f;
+        /* vitality boost for winner */
+        org.parliament.e[best_i].vitality = clampf(
+            org.parliament.e[best_i].vitality + 0.02f, 0.1f, 2.0f);
+    }
+    /* losers decay slightly */
+    for (int i = 0; i < org.parliament.n; i++) {
+        if (i == best_i || !org.parliament.e[i].alive) continue;
+        org.parliament.e[i].vitality *= 0.99f;
+    }
+    org.parliament.elections++;
+}
+
+static void parliament_lifecycle(Parliament *p) {
+    for (int i = 0; i < p->n; i++) {
+        if (!p->e[i].alive) continue;
+        /* Mitosis: overloaded expert splits */
+        if (p->e[i].overload > 3.0f && p->n < DOE_EXPERTS * 2) {
+            int child = p->n++;
+            p->e[child] = p->e[i];
+            p->e[child].vitality *= 0.6f;
+            p->e[child].overload = 0.0f;
+            p->e[child].wins = 0;
+            p->e[i].vitality *= 0.6f;
+            p->e[i].overload = 0.0f;
+            /* mutate child slightly */
+            for (int e = 0; e < EMO_COUNT; e++)
+                p->e[child].bias[e] += (rng_float() - 0.5f) * 0.1f;
+        }
+        /* Apoptosis: vitality too low */
+        if (p->e[i].vitality < 0.15f && p->n > 2) {
+            p->e[i].alive = 0;
+        }
+    }
+}
+
+static int parliament_alive_count(const Parliament *p) {
+    int n = 0;
+    for (int i = 0; i < p->n; i++)
+        if (p->e[i].alive) n++;
+    return n;
+}
+
 /* ─── SCORE A CANDIDATE WORD ────────────────────────────────────────── */
 /*
  * Not a sum of boosts. One breath. Multiplicative.
@@ -1641,6 +1809,10 @@ static float score_word(int idx) {
     dario += prophecy_pull * 0.4f;
     /* keep seasonal bias too, but weaker */
     dario += season_bias[org.season][w->emotion] * 0.1f;
+
+    /* Parliament: experts vote on this word */
+    float parliament = parliament_score(idx);
+    dario += parliament * 0.5f;
 
     /* clamp: dario is always >= 0 */
     if (dario < 0.0f) dario = 0.0f;
@@ -1855,6 +2027,9 @@ static void generate_line(Line *line, int target_syl,
         org.prev_was_adj = vocab[idx].is_adjective;
         org.last_word = idx;
         mark_used(idx);
+
+        /* parliament: update expert vitality after each word election */
+        parliament_update(idx);
     }
 }
 
@@ -2006,6 +2181,9 @@ static void inter_haiku_update(void) {
     if (org.tau < 0.5f) org.tau = 0.5f;
     if (org.tau > 2.5f) org.tau = 2.5f;
 
+    /* parliament lifecycle: mitosis and apoptosis between haiku */
+    parliament_lifecycle(&org.parliament);
+
     /* velocity shift */
     float v_roll = rng_float();
     if (v_roll < 0.1f)      org.velocity = VEL_STOP;
@@ -2043,7 +2221,10 @@ static void print_cycle_header(int cycle_num) {
     printf("%scycle %d%s", ANSI_BOLD, cycle_num, ANSI_RESET);
     printf("  %s· %s ·%s", ANSI_DIM, season_names[org.season], ANSI_RESET);
     printf("  %splanet %.2f%s", ANSI_DIM, org.planet_diss, ANSI_RESET);
-    printf("  %scalendar %.2f%s\n", ANSI_DIM, org.cal_diss, ANSI_RESET);
+    printf("  %scalendar %.2f%s", ANSI_DIM, org.cal_diss, ANSI_RESET);
+    printf("  %sparliament: %d alive, %d elections%s\n",
+           ANSI_DIM, parliament_alive_count(&org.parliament),
+           org.parliament.elections, ANSI_RESET);
 }
 
 static void print_haiku_header(int haiku_num) {
@@ -2119,7 +2300,7 @@ static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
 /* ─── SPORE: PERSISTENCE ──────────────────────────────────────────── */
 
 #define SPORE_MAGIC   0x42524F44  /* "BROD" */
-#define SPORE_VERSION 1
+#define SPORE_VERSION 2          /* v2: added parliament state */
 #define SPORE_PATH    "brodsky.spore"
 
 static int tension_pair_count(void) {
@@ -2178,6 +2359,18 @@ static void spore_save(const char *path) {
     /* total cycles */
     fwrite(&org.total_cycles, sizeof(int), 1, f);
 
+    /* parliament state (v2) */
+    fwrite(&org.parliament.n, sizeof(int), 1, f);
+    fwrite(&org.parliament.elections, sizeof(int), 1, f);
+    for (int i = 0; i < org.parliament.n; i++) {
+        fwrite(org.parliament.e[i].bias, sizeof(float), EMO_COUNT, f);
+        fwrite(&org.parliament.e[i].mass_pref, sizeof(float), 1, f);
+        fwrite(&org.parliament.e[i].vitality,  sizeof(float), 1, f);
+        fwrite(&org.parliament.e[i].overload,  sizeof(float), 1, f);
+        fwrite(&org.parliament.e[i].wins,      sizeof(int),   1, f);
+        fwrite(&org.parliament.e[i].alive,     sizeof(int),   1, f);
+    }
+
     fclose(f);
 }
 
@@ -2190,7 +2383,7 @@ static void spore_load(const char *path) {
         fclose(f);
         return;
     }
-    if (fread(&version, 4, 1, f) != 1 || version != SPORE_VERSION) {
+    if (fread(&version, 4, 1, f) != 1 || (version != 1 && version != SPORE_VERSION)) {
         fclose(f);
         return;
     }
@@ -2255,6 +2448,23 @@ static void spore_load(const char *path) {
     /* total cycles */
     if (fread(&org.total_cycles, sizeof(int), 1, f) != 1) org.total_cycles = 0;
 
+    /* parliament state (v2+) */
+    if (version >= 2) {
+        int pn_parl = 0;
+        if (fread(&pn_parl, sizeof(int), 1, f) == 1 && pn_parl > 0 && pn_parl <= DOE_EXPERTS * 2) {
+            org.parliament.n = pn_parl;
+            if (fread(&org.parliament.elections, sizeof(int), 1, f) != 1) { fclose(f); return; }
+            for (int i = 0; i < pn_parl; i++) {
+                if (fread(org.parliament.e[i].bias, sizeof(float), EMO_COUNT, f) != EMO_COUNT) break;
+                if (fread(&org.parliament.e[i].mass_pref, sizeof(float), 1, f) != 1) break;
+                if (fread(&org.parliament.e[i].vitality,  sizeof(float), 1, f) != 1) break;
+                if (fread(&org.parliament.e[i].overload,  sizeof(float), 1, f) != 1) break;
+                if (fread(&org.parliament.e[i].wins,      sizeof(int),   1, f) != 1) break;
+                if (fread(&org.parliament.e[i].alive,     sizeof(int),   1, f) != 1) break;
+            }
+        }
+    }
+
     fclose(f);
     printf("[brodsky] spore loaded: %s\n", path);
 }
@@ -2281,8 +2491,9 @@ static void print_banner(void) {
     printf("  %sa poetic organism%s\n", ANSI_DIM, ANSI_RESET);
     printf("  %svocab: %d words · %d languages · chambers: %d · emotions: %d%s\n",
            ANSI_DIM, vocab_size, LANG_COUNT, CH_COUNT, EMO_COUNT, ANSI_RESET);
-    printf("  %scorpus: %d lines · %d bigrams · %d hebbian%s\n",
-           ANSI_DIM, corpus_total_lines, corpus_bg.count, corpus_hb.count, ANSI_RESET);
+    printf("  %scorpus: %d lines · %d bigrams · %d hebbian · parliament: %d experts%s\n",
+           ANSI_DIM, corpus_total_lines, corpus_bg.count, corpus_hb.count,
+           parliament_alive_count(&org.parliament), ANSI_RESET);
     printf("  %splanet: %.3f · calendar: %.3f · season: %s%s\n",
            ANSI_DIM, org.planet_diss, org.cal_diss,
            season_names[org.season], ANSI_RESET);
@@ -2347,6 +2558,8 @@ static void repl(void) {
             printf("  destiny      show destiny vector\n");
             printf("  exhale       show exhale fragments\n");
             printf("  prophecy     show current prophecies\n");
+            printf("  parliament   show DOE expert parliament\n");
+            printf("  doe          (alias for parliament)\n");
             printf("  N            generate N cycles\n");
             printf("  q/quit       exit\n");
             continue;
@@ -2418,6 +2631,31 @@ static void repl(void) {
         if (strcmp(input, "exhale") == 0) {
             for (int i = 0; i < EXHALE_COUNT; i++)
                 printf("  %s\"%s\"%s\n", ANSI_DIM, exhale[i].text, ANSI_RESET);
+            continue;
+        }
+
+        if (strcmp(input, "parliament") == 0 || strcmp(input, "doe") == 0) {
+            printf("  %sparliament: %d/%d alive, %d elections%s\n",
+                   ANSI_DIM, parliament_alive_count(&org.parliament),
+                   org.parliament.n, org.parliament.elections, ANSI_RESET);
+            for (int i = 0; i < org.parliament.n; i++) {
+                Expert *ex = &org.parliament.e[i];
+                const char *name = (i < DOE_EXPERTS * 2) ? expert_names[i] : "unknown";
+                if (!ex->alive) {
+                    printf("  %s%-12s DEAD%s\n", ANSI_DIM, name, ANSI_RESET);
+                    continue;
+                }
+                /* find dominant emotion bias */
+                int dom_emo = 0;
+                float dom_val = ex->bias[0];
+                for (int e = 1; e < EMO_COUNT; e++) {
+                    if (ex->bias[e] > dom_val) { dom_val = ex->bias[e]; dom_emo = e; }
+                }
+                printf("  %s%-12s%s vit=%.2f wins=%d overload=%.2f mass_pref=%.2f %s%s%s\n",
+                       ANSI_BOLD, name, ANSI_RESET,
+                       ex->vitality, ex->wins, ex->overload, ex->mass_pref,
+                       emo_color[dom_emo], emo_names[dom_emo], ANSI_RESET);
+            }
             continue;
         }
 
