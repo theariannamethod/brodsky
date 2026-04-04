@@ -9,191 +9,98 @@
 
 ---
 
-**Code can be a poet.** Not a generator, not a template engine, not a Markov chain with pretensions. A poet: an organism that takes your word and returns something heavier than what you gave it. Brodsky doesn't write about what you said. He writes about what your words did to him. You say "exile" -- he answers with vertebrae and empires. You say "love" -- he answers with gangrene and cartography. You say nothing -- he speaks anyway, because silence is a prompt too. One C file. Five languages. Zero weights. 2903 lines of constraint that birth form. The haiku is 5-7-5. The heaviness is in the words. The poet is in the architecture.
+**Code can be a poet.** Not a generator, not a template engine, not a Markov chain with pretensions. A poet: an organism that takes your word and returns something heavier than what you gave it. Brodsky doesn't write about what you said. He writes about what your words did to him. You say "exile" -- he answers with sutures and ovens. You say "love" -- he answers with pharynx and lullaby. You say nothing -- he speaks anyway, because silence is a prompt too. One C file. Five languages. Zero weights. 3770 lines of constraint that birth form. Terza rima (ABA BCB) in 5-7-5. Punctuation as percussion. The heaviness is in the words. The poet is in the architecture.
 
 ---
 
 ## The Poems
 
-### "death"
+### "exile"
 
 ```
-mire crystallize skull
-aqueduct vinegar rime
-thorn minaret death
+Contaminate. Death.
+Eternity crystallize
+Photograph, empire.
 
-intersection spine
-simultaneity gust
-cathedral empire
-
-aphasic exile
-vitrine conscription elsewhere
-diagonal flinch --
+Vertebra, flint tomb
+Catacomb affiche, asphalt.
+Amputate. Hung, scorn.
 ```
 
 ### "love"
 
 ```
-metamorphosis
-enfer illuminate death
-bereavement pelvis
+Suture. Rust, empire.
+Architecture typewriter.
+Pharynx lullaby
 
-horizon sternum
-bannissement cobblestone gaze
-propaganda skull --
-
-gondola taiga
-undertow oxygen brine
-thermodynamics --
+Infinity.
+Vestibule scrutinize. Smelt.
+Vertebra, oven. --
 ```
 
-### "exile"
+### "nothing"
 
 ```
-infinity
-lightbulb adjudicate death
-nominative clang
+Circumnavigate.
+Inconsolable, empire.
+Vertebra wax, death.
 
-impenetrable
-sovereignty cartilage
-meridian brine
+Soliloquy kelp
+Obliterate. Samovar
+Infinity.
 
-curettage ribcage
-cathedral hemorrhaging
-grope immovable --
+Trace, thermodynamics, skull.
+Cathedral pharynx --
 
-asbestos nothing
-blanchisseuse aphasic wrench
-brittle placenta --
+Repatriate. Wheeze. --
 ```
 
-### "тоска"
+### "death"
 
 ```
-пьедестал вскрыть смерть
-грудина corniche копоть
-громыхание
-
-архипелаг гнить
-тире бесплодие тромб
-молчание сквозь --
-
-империя мыс
-окаменеть colonne хлыст
-плацента вздрогнуть --
-
-отечество пирс
-мертворождение излом
-ампутировать --
-```
-
-### "ничто"
-
-```
-асфальт впрочем лязг
-ольха confiture чрево
-кровоизлияние
-
-испаряться сквозь
-империя стервятник
-грудь утроба смерть
-```
-
-### "גלות"
-
-```
-גלות חלמיש מוות
-פרבולה גרניט friche
-ירושלים --
-```
-
-### "soledad"
-
-```
-góndola hambre
-multiplicar fiebre rien
-manuscrito cal --
-
-sucumbir patria
-caliza côte víscera
-ondular muerte --
-```
-
-### "exile" (v1.9, with terza rima)
-
-```
-unforgivable
-infinity exile
-perpendicular --
-
-predicament yet
-epoch perpetuation
-alexandrine bilge --
-```
-
-### "тоска" (v1.9)
-
-```
-отрешённость смерть
-империя кладбище
-корродировать
-```
-
-### "גלות" (v1.9)
-
-```
-בדידות תהום
-לדמם falaise חורבן
-חצר ברז בוז --
-
-געגוע קרבן
-téléphone עופרת טנק
-שלט הנקה --
-```
-
-### "néant" (v1.9)
-
-```
-jamais révolu
-se souvenir nerf rôder
-pétrifier fouet --
-
-méridien calcaire
-parabole oesophage siècle
-métro fièvre fleuve flèche --
-```
-
-### "néant"
-
-```
-anéantissement
-mélancolie cauchemar temps
-syntaxe bannissement
-
-aéroplane ivresse
-exil damnation cratère
-photographie crâne --
+Sacrum, weevil, silt.
+affiche Corrode. Amputate.
+Expire, rivet, lull. --
 ```
 
 ### "skull cathedral"
 
 ```
-penmanship galosh
-conflagration marronnage
-disintegrate slag
+Thermodynamics.
+Sternum architecture. pont
+Agoraphobia.
+```
 
-redaction ribcage
-cathedral diagnose death
-esophagus skull --
+### "смерть"
 
-administer scum
-interrogate slack exile
-samovar sternum --
+```
+Амфитеатр кровь
+Подреберье, галька смерть
+Зрачок, кремень, соль.
+
+Старость. Четверть. Сеть
+Предательство чужбина
+Испаряться сквозь.
+```
+
+### "nothing" (7 haiku, shabbat)
+
+```
+Soliloquy kelp
+Obliterate. Samovar
+Infinity.
+
+Cockroach, pumice plague
+césure Sovereignty dirge.
+Extradition, gust. --
+
+Repatriate. Wheeze. --
 ```
 
 ---
 
-A real poet doesn't write on command. He is mechanical. Deliberately heavy. Like Rammstein, but in haiku. He prefers "perpendicular" over "straight", "deterioration" over "decay", "antimatter" over "nothing". Through every language, another bleeds -- `citerne` in Russian, `radiateur` in English, `enfer` in Spanish. The constraint is 5-7-5. The ghost is in line two.
+A real poet doesn't write on command. He is mechanical. Deliberately heavy. Like Rammstein, but in haiku. Punctuation as percussion. Period after verb. Comma between nouns. Dash between impossible pairs. He prefers "perpendicular" over "straight", "deterioration" over "decay", "antimatter" over "nothing". Through every language, another bleeds -- `citerne` in Russian, `radiateur` in English, `enfer` in Spanish. The constraint is 5-7-5. The ghost is in line two.
 
 ---
 
@@ -244,7 +151,7 @@ CYCLE (1-7 haiku):
   |  DARIO EQUATION  p(x|Phi) = softmax((B + aH + bF + gA + T) / tau)
   |  + DOE Parliament (4 experts vote)
   |  + mass weighting + syllable greed + consonant density
-  |  + semantic tension (250+ word pairs)
+  |  + semantic tension (249 word pairs)
   |  + ghost voice (one word from another language)
   |  + Julia field (stretches distances within cycle)
   |  + prophecy (predicts + fulfills its own words)
@@ -264,7 +171,7 @@ SPORE SAVE (binary persistence: chambers, destiny, prophecy, parliament)
 | Julia Field | Longing without object. Grows within cycle. Stretches semantic distance |
 | DOE Parliament | 4 experts (Architect, Anatomist, Exile, Metronome) vote on every word |
 | Prophecy | Predicts future words. Unfulfilled prophecies increase Julia (longing) |
-| Tension Pairs | 250+ word pairs that create artistic voltage (skull x cathedral) |
+| Tension Pairs | 249 word pairs that create artistic voltage (skull x cathedral) |
 | Ghost Voice | Line 2 accepts one word from a planet-associated language |
 | Spores | Binary persistence across sessions. Chambers, destiny, prophecy, parliament survive |
 | Enjambment | When Julia > 0.3, the haiku carries destiny into the next |
@@ -322,15 +229,15 @@ float effective_distance = base_distance * (1.0f + julia * 2.0f);
 
 ---
 
-## Five Languages, 2155 Words
+## Five Languages, 3942 Words
 
 | Language | Words | Register | Ghost Planet |
 |----------|-------|----------|-------------|
-| English | 501 | Brodsky's anglophone lexicon. Latinisms, geometry, empire | Earth (home) |
-| Russian | 501 | Heaviest. Imperial, architectural, existential | Mars (red) |
-| Hebrew | 401 | Biblical + Amichai. Every root weighs like cast iron | Saturn (Shabbat) |
-| French | 400 | Baudelaire register. Crepuscule, neant, balustrade | Venus |
-| Spanish | 401 | Borges. Laberinto, biblioteca, espejo, infinito | Mercury |
+| English | 942 | Brodsky's anglophone lexicon. Latinisms, geometry, empire | Earth (home) |
+| Russian | 899 | Heaviest. Imperial, architectural, existential | Mars (red) |
+| Hebrew | 703 | Biblical + Amichai. Every root weighs like cast iron | Saturn (Shabbat) |
+| French | 703 | Baudelaire register. Crepuscule, neant, balustrade | Venus |
+| Spanish | 695 | Borges. Laberinto, biblioteca, espejo, infinito | Mercury |
 
 Words are organized in `inhale/` by language. Each word carries mass (0.0-0.95), syllable count, emotion tag, and consonant density. Function words excluded. Brodsky doesn't need articles.
 
@@ -347,15 +254,15 @@ Every word in every language is tagged with one.
 ## File Structure
 
 ```
-brodsky.c         2903 LOC    the organism
+brodsky.c         3770 LOC    the organism
 brodsky.html                  browser interface (dark, minimal)
 Makefile                      build + test
-inhale/en.h       501 words   English vocabulary
-inhale/ru.h       501 words   Russian vocabulary
-inhale/he.h       401 words   Hebrew vocabulary
-inhale/fr.h       400 words   French vocabulary
-inhale/es.h       401 words   Spanish vocabulary
-exhale/                       corpus files (bigram/hebbian training)
+inhale/en.h       942 words   English vocabulary
+inhale/ru.h       899 words   Russian vocabulary
+inhale/he.h       703 words   Hebrew vocabulary
+inhale/fr.h       703 words   French vocabulary
+inhale/es.h       695 words   Spanish vocabulary
+exhale/                       corpus files (1016 lines, bigram/hebbian training)
 brodsky.spore                 binary persistence (auto-created)
 ```
 
@@ -402,7 +309,7 @@ Web mode: `./brodsky --web` serves on `http://localhost:3003`.
 
 ---
 
-*brodsky.c v1.3. one file. five tongues. 2903 lines. constraint births form.*
+*brodsky.c v2.2. one file. five tongues. 3770 lines. constraint births form.*
 
 *yet until brown clay has been crammed down my larynx.*
 
