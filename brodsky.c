@@ -193,6 +193,9 @@ typedef struct {
     float       consonant_density;
     float       destiny[DESTINY_DIM];
     int         is_adjective;   /* rough POS tag */
+    int         is_verb;        /* rough: ends in -ate, -ize, -ть, -ся, etc. */
+    int         is_preposition; /* words that glue to verbs: "through", "сквозь", etc. */
+    int         is_connective;  /* "therefore", "nevertheless", "впрочем", etc. */
     int         lang;           /* LANG_EN..LANG_ES */
 } Word;
 
@@ -234,6 +237,171 @@ static int is_adjective_word(const char *w) {
         if (len >= 4 && strcmp(w + len - 3, "ive") == 0) return 1;
         if (len >= 5 && strcmp(w + len - 4, "less") == 0) return 1;
     }
+    return 0;
+}
+
+/* ─── VERB DETECTION (rough POS) ───────────────────────────────────── */
+
+static int is_verb_word(const char *w, int lang) {
+    int len = (int)strlen(w);
+    if (len < 2) return 0;
+
+    /* English verbs: common infinitive/base-form endings */
+    if (lang == LANG_EN && len >= 3) {
+        if (len >= 4 && strcmp(w + len - 3, "ate") == 0) return 1;  /* annihilate, calcinate */
+        if (len >= 4 && strcmp(w + len - 3, "ize") == 0) return 1;  /* crystallize */
+        if (len >= 4 && strcmp(w + len - 3, "ise") == 0) return 1;  /* ostracise */
+        if (len >= 4 && strcmp(w + len - 3, "ify") == 0) return 1;  /* ossify, petrify */
+        if (len >= 4 && strcmp(w + len - 3, "lve") == 0) return 1;  /* dissolve, resolve */
+        if (len >= 4 && strcmp(w + len - 3, "rge") == 0) return 1;  /* emerge, converge */
+        if (len >= 4 && strcmp(w + len - 3, "ose") == 0) return 1;  /* decompose, transpose */
+        if (len >= 4 && strcmp(w + len - 3, "ude") == 0) return 1;  /* extrude, exclude */
+        if (len >= 4 && strcmp(w + len - 3, "ibe") == 0) return 1;  /* inscribe, transcribe */
+        if (len >= 4 && strcmp(w + len - 3, "ade") == 0) return 1;  /* cascade, evade */
+        if (len >= 5 && strcmp(w + len - 4, "erge") == 0) return 1; /* submerge */
+        if (len >= 4 && strcmp(w + len - 3, "ode") == 0) return 1;  /* erode, corrode */
+        if (len >= 4 && strcmp(w + len - 3, "ute") == 0) return 1;  /* dilute, transmute */
+        if (len >= 4 && strcmp(w + len - 3, "ure") == 0) return 1;  /* fracture, suture */
+        if (len >= 4 && strcmp(w + len - 3, "ect") == 0) return 1;  /* dissect, erect */
+        if (len >= 4 && strcmp(w + len - 3, "erb") == 0) return 1;  /* reverb */
+        if (len >= 4 && strcmp(w + len - 3, "urn") == 0) return 1;  /* burn, return */
+        if (len >= 4 && strcmp(w + len - 3, "ash") == 0) return 1;  /* crash, gnash */
+    }
+
+    /* Russian verbs: infinitive endings in UTF-8 */
+    if (lang == LANG_RU) {
+        const unsigned char *u = (const unsigned char *)w;
+        /* UTF-8 Cyrillic: each char = 2 bytes (0xD0/0xD1 + second byte)
+         * ть = D1 82 D1 8C
+         * ся = D1 81 D1 8F
+         * ать = D0 B0 D1 82 D1 8C (4 bytes ending)
+         * ять = D1 8F D1 82 D1 8C
+         * еть = D0 B5 D1 82 D1 8C
+         * ить = D0 B8 D1 82 D1 8C
+         * уть = D1 83 D1 82 D1 8C
+         * ться = D1 82 D1 8C D1 81 D1 8F (8 bytes)
+         */
+        if (len >= 4) {
+            /* Check for -ть (D1 82 D1 8C) at end */
+            if (u[len-4] == 0xD1 && u[len-3] == 0x82 &&
+                u[len-2] == 0xD1 && u[len-1] == 0x8C)
+                return 1;
+        }
+        if (len >= 4) {
+            /* Check for -ся (D1 81 D1 8F) at end — reflexive */
+            if (u[len-4] == 0xD1 && u[len-3] == 0x81 &&
+                u[len-2] == 0xD1 && u[len-1] == 0x8F)
+                return 1;
+        }
+    }
+
+    /* French verbs: -er, -ir, -re infinitives */
+    if (lang == LANG_FR && len >= 3) {
+        if (strcmp(w + len - 2, "er") == 0) return 1;  /* dissoudre, but also verb -er */
+        if (strcmp(w + len - 2, "ir") == 0) return 1;  /* mourir, partir */
+        if (strcmp(w + len - 2, "re") == 0) return 1;  /* dissoudre, rompre */
+    }
+
+    /* Spanish verbs: -ar, -er, -ir infinitives */
+    if (lang == LANG_ES && len >= 3) {
+        if (strcmp(w + len - 2, "ar") == 0) return 1;  /* calcinar */
+        if (strcmp(w + len - 2, "er") == 0) return 1;  /* disolver */
+        if (strcmp(w + len - 2, "ir") == 0) return 1;  /* morir */
+    }
+
+    return 0;
+}
+
+/* ─── CONNECTIVE DETECTION ─────────────────────────────────────────── */
+
+static const char *en_connectives[] = {
+    "therefore", "moreover", "nevertheless", "whereas", "inasmuch",
+    "accordingly", "furthermore", "notwithstanding", "albeit", "namely",
+    "hitherto", "henceforth", "whereby", "however", "meanwhile",
+    NULL
+};
+
+static const char *ru_connectives[] = {
+    /* впрочем однако вопреки притом посреди */
+    "\xd0\xb2\xd0\xbf\xd1\x80\xd0\xbe\xd1\x87\xd0\xb5\xd0\xbc",           /* впрочем */
+    "\xd0\xbe\xd0\xb4\xd0\xbd\xd0\xb0\xd0\xba\xd0\xbe",                     /* однако */
+    "\xd0\xb2\xd0\xbe\xd0\xbf\xd1\x80\xd0\xb5\xd0\xba\xd0\xb8",             /* вопреки */
+    "\xd0\xbf\xd1\x80\xd0\xb8\xd1\x82\xd0\xbe\xd0\xbc",                     /* притом */
+    "\xd0\xbf\xd0\xbe\xd1\x81\xd1\x80\xd0\xb5\xd0\xb4\xd0\xb8",             /* посреди */
+    NULL
+};
+
+static const char *fr_connectives[] = {
+    "cependant", "toutefois", "pourtant", "nonobstant",
+    NULL
+};
+
+static const char *es_connectives[] = {
+    "sinembargo", "noobstante", "portanto",
+    NULL
+};
+
+static int is_connective_word(const char *w, int lang) {
+    const char **list = NULL;
+    switch (lang) {
+        case LANG_EN: list = en_connectives; break;
+        case LANG_RU: list = ru_connectives; break;
+        case LANG_FR: list = fr_connectives; break;
+        case LANG_ES: list = es_connectives; break;
+        default: return 0;
+    }
+    if (!list) return 0;
+    for (int i = 0; list[i]; i++)
+        if (strcmp(w, list[i]) == 0) return 1;
+    return 0;
+}
+
+/* ─── PREPOSITION / ADVERB DETECTION (glue words for verbs) ───────── */
+
+static const char *en_prepositions[] = {
+    "through", "beneath", "toward", "across", "beyond", "against",
+    "above", "below", "within", "without", "somewhere", "nowhere",
+    "everywhere", "always", "never", "once", "still", "yet", "already",
+    "perhaps", "henceforth", "hitherto", "toward", "onwards", "inward",
+    "outward", "upward", "downward", "forward", "backward",
+    NULL
+};
+
+static const char *ru_prepositions[] = {
+    /* сквозь навстречу вопреки посреди между никогда нигде никуда */
+    "\xd1\x81\xd0\xba\xd0\xb2\xd0\xbe\xd0\xb7\xd1\x8c",                 /* сквозь */
+    "\xd0\xbd\xd0\xb0\xd0\xb2\xd1\x81\xd1\x82\xd1\x80\xd0\xb5\xd1\x87\xd1\x83", /* навстречу */
+    "\xd0\xb2\xd0\xbe\xd0\xbf\xd1\x80\xd0\xb5\xd0\xba\xd0\xb8",         /* вопреки */
+    "\xd0\xbf\xd0\xbe\xd1\x81\xd1\x80\xd0\xb5\xd0\xb4\xd0\xb8",         /* посреди */
+    "\xd0\xbc\xd0\xb5\xd0\xb6\xd0\xb4\xd1\x83",                         /* между */
+    "\xd0\xbd\xd0\xb8\xd0\xba\xd0\xbe\xd0\xb3\xd0\xb4\xd0\xb0",         /* никогда */
+    "\xd0\xbd\xd0\xb8\xd0\xb3\xd0\xb4\xd0\xb5",                         /* нигде */
+    "\xd0\xbd\xd0\xb8\xd0\xba\xd1\x83\xd0\xb4\xd0\xb0",                 /* никуда */
+    NULL
+};
+
+static const char *fr_prepositions[] = {
+    "jamais", "toujours", "partout", "ailleurs", "dedans", "dehors",
+    NULL
+};
+
+static const char *es_prepositions[] = {
+    "nunca", "siempre", "acaso", "adentro", "afuera",
+    NULL
+};
+
+static int is_preposition_word(const char *w, int lang) {
+    const char **list = NULL;
+    switch (lang) {
+        case LANG_EN: list = en_prepositions; break;
+        case LANG_RU: list = ru_prepositions; break;
+        case LANG_FR: list = fr_prepositions; break;
+        case LANG_ES: list = es_prepositions; break;
+        default: return 0;
+    }
+    if (!list) return 0;
+    for (int i = 0; list[i]; i++)
+        if (strcmp(w, list[i]) == 0) return 1;
     return 0;
 }
 
@@ -305,6 +473,11 @@ static void load_raw_array(const RawWord *raw, int raw_count) {
 
         /* is_adjective heuristic only works for English */
         vocab[vocab_size].is_adjective = (raw[r].lang == LANG_EN) ? is_adjective_word(raw[r].text) : 0;
+
+        /* POS: verb, preposition, and connective detection */
+        vocab[vocab_size].is_verb = is_verb_word(raw[r].text, raw[r].lang);
+        vocab[vocab_size].is_preposition = is_preposition_word(raw[r].text, raw[r].lang);
+        vocab[vocab_size].is_connective = is_connective_word(raw[r].text, raw[r].lang);
 
         /* destiny vector: seeded from word hash */
         unsigned h = 5381;
@@ -2354,24 +2527,328 @@ static void generate_haiku(Haiku *h) {
     }
 }
 
+/* ─── PUNCTUATION POST-PROCESSING ENGINE ───────────────────────────── */
+/*
+ * Brodsky-style punctuation: raw word sequences → punctuated verse.
+ *
+ * Before: "империя мыс окаменеть colonne хлыст плацента вздрогнуть"
+ * After:  "Империя — мыс. Окаменеть. Colonne, хлыст, плацента. Вздрогнуть."
+ *
+ * Rules fire probabilistically (75%) to create uneven rhythm.
+ * Ghost words (foreign language) pass through unpunctuated.
+ * Tension pairs get em-dash instead of comma.
+ * Verbs followed by prepositions/adverbs glue together.
+ */
+
+/* Capitalize the first character of a UTF-8 word into buf.
+ * Handles Latin (ASCII) and Cyrillic (0xD0/0xD1 range).
+ * Hebrew has no case — copied as-is.
+ * Returns number of bytes written. */
+static int capitalize_word(const char *src, char *dst, int dstsize) {
+    const unsigned char *u = (const unsigned char *)src;
+    int slen = (int)strlen(src);
+    if (slen == 0 || dstsize < 2) { dst[0] = '\0'; return 0; }
+
+    /* ASCII Latin */
+    if (u[0] >= 'a' && u[0] <= 'z') {
+        dst[0] = (char)(u[0] - 32);
+        int rem = slen - 1;
+        if (rem > dstsize - 2) rem = dstsize - 2;
+        memcpy(dst + 1, src + 1, (size_t)rem);
+        dst[1 + rem] = '\0';
+        return 1 + rem;
+    }
+
+    /* Cyrillic lowercase: а-п = D0 B0..BF → D0 90..9F (uppercase А-П)
+     *                     р-я = D1 80..8F → D0 A0..AF (uppercase Р-Я)
+     *                     ё   = D1 91    → D0 81     (uppercase Ё) */
+    if (slen >= 2 && u[0] == 0xD0 && u[1] >= 0xB0 && u[1] <= 0xBF) {
+        /* а(B0)-п(BF) → А(90)-П(9F): same lead byte D0, second byte - 0x20 */
+        dst[0] = (char)0xD0;
+        dst[1] = (char)(u[1] - 0x20);
+        int rem = slen - 2;
+        if (rem > dstsize - 3) rem = dstsize - 3;
+        memcpy(dst + 2, src + 2, (size_t)rem);
+        dst[2 + rem] = '\0';
+        return 2 + rem;
+    }
+    if (slen >= 2 && u[0] == 0xD1 && u[1] >= 0x80 && u[1] <= 0x8F) {
+        /* р(80)-я(8F) → Р(A0)-Я(AF): lead byte changes D1→D0, second + 0x20 */
+        dst[0] = (char)0xD0;
+        dst[1] = (char)(u[1] + 0x20);
+        int rem = slen - 2;
+        if (rem > dstsize - 3) rem = dstsize - 3;
+        memcpy(dst + 2, src + 2, (size_t)rem);
+        dst[2 + rem] = '\0';
+        return 2 + rem;
+    }
+    if (slen >= 2 && u[0] == 0xD1 && u[1] == 0x91) {
+        /* ё → Ё: D1 91 → D0 81 */
+        dst[0] = (char)0xD0;
+        dst[1] = (char)0x81;
+        int rem = slen - 2;
+        if (rem > dstsize - 3) rem = dstsize - 3;
+        memcpy(dst + 2, src + 2, (size_t)rem);
+        dst[2 + rem] = '\0';
+        return 2 + rem;
+    }
+
+    /* No case (Hebrew, already uppercase, etc.) — copy as-is */
+    int copylen = slen;
+    if (copylen > dstsize - 1) copylen = dstsize - 1;
+    memcpy(dst, src, (size_t)copylen);
+    dst[copylen] = '\0';
+    return copylen;
+}
+
+/* Check if a word is a ghost (from a different language than the line's primary) */
+static int is_ghost_word(int word_idx, int line_lang) {
+    return vocab[word_idx].lang != line_lang;
+}
+
+/* Determine the primary language of a line (majority vote) */
+static int line_primary_lang(const Line *line) {
+    int counts[LANG_COUNT];
+    memset(counts, 0, sizeof(counts));
+    for (int i = 0; i < line->count; i++) {
+        int l = vocab[line->words[i]].lang;
+        if (l >= 0 && l < LANG_COUNT) counts[l]++;
+    }
+    int best = LANG_EN, best_c = counts[LANG_EN];
+    for (int l = 1; l < LANG_COUNT; l++) {
+        if (counts[l] > best_c) { best_c = counts[l]; best = l; }
+    }
+    return best;
+}
+
+/*
+ * Punctuation result for a single word.
+ * pre_punct:  punctuation string to insert BEFORE the word (e.g. ". ", " — ")
+ * post_punct: punctuation string to insert AFTER the word (e.g. ".", "!")
+ * capitalize: whether this word should be capitalized
+ * skip_space: don't emit space before this word (e.g. after sentence break
+ *             where pre_punct already includes spacing)
+ */
+typedef struct {
+    const char *pre_punct;   /* before word, after space */
+    const char *post_punct;  /* after word, before next space */
+    int         capitalize;
+    int         ghost;       /* 1 = ghost word, no punctuation */
+} PunctMark;
+
+/*
+ * punctuate_line: compute punctuation marks for each word in a line.
+ * marks[] must have at least line->count elements.
+ */
+static void punctuate_line(const Line *line, PunctMark *marks) {
+    int n = line->count;
+    if (n == 0) return;
+
+    int lang = line_primary_lang(line);
+
+    /* Initialize all marks to empty */
+    for (int i = 0; i < n; i++) {
+        marks[i].pre_punct = "";
+        marks[i].post_punct = "";
+        marks[i].capitalize = 0;
+        marks[i].ghost = 0;
+    }
+
+    /* First word always capitalized */
+    marks[0].capitalize = 1;
+
+    int after_period = 1;  /* start of line = after implicit period */
+
+    for (int i = 0; i < n; i++) {
+        int idx = line->words[i];
+        int ghost = is_ghost_word(idx, lang);
+        marks[i].ghost = ghost;
+
+        /* Ghost words: no punctuation around them, lowercase, interrupt flow */
+        if (ghost) {
+            /* Don't reset after_period — ghost doesn't count as grammar */
+            continue;
+        }
+
+        /* 25% chance: skip punctuation for this word (probabilistic rhythm) */
+        int skip_punct = (rng_float() < 0.25f);
+
+        if (skip_punct) {
+            /* Still capitalize if after period */
+            if (after_period && i > 0)
+                marks[i].capitalize = 1;
+            after_period = 0;
+            continue;
+        }
+
+        /* Connective: sentence break before it */
+        if (vocab[idx].is_connective && i > 0) {
+            marks[i].pre_punct = ". ";
+            marks[i].capitalize = 1;
+            after_period = 0;  /* we're at the connective itself, not after it yet */
+            /* The connective itself doesn't get a trailing period —
+             * the next word's rules handle that */
+            continue;
+        }
+
+        /* Capitalize after period */
+        if (after_period && i > 0)
+            marks[i].capitalize = 1;
+        after_period = 0;
+
+        /* Verb handling */
+        if (vocab[idx].is_verb) {
+            /* Peek at next non-ghost word */
+            int next_real = -1;
+            for (int j = i + 1; j < n; j++) {
+                if (!is_ghost_word(line->words[j], lang)) {
+                    next_real = j;
+                    break;
+                }
+            }
+
+            if (next_real < 0) {
+                /* Verb at end of line → period */
+                /* Check for exclamation: mass > 0.80 AND emotion TRAUMA or RAGE → 10% chance */
+                if (vocab[idx].mass > 0.80f &&
+                    (vocab[idx].emotion == EMO_TRAUMA || vocab[idx].emotion == EMO_RAGE) &&
+                    rng_float() < 0.10f) {
+                    marks[i].post_punct = "!";
+                } else {
+                    marks[i].post_punct = ".";
+                }
+                after_period = 1;
+            } else if (vocab[line->words[next_real]].is_preposition) {
+                /* Verb + preposition → glue (no punctuation between them),
+                 * period after the preposition */
+                /* Don't punctuate verb; preposition will be handled below */
+            } else {
+                /* Verb + noun/adjective/other → period after verb */
+                if (vocab[idx].mass > 0.80f &&
+                    (vocab[idx].emotion == EMO_TRAUMA || vocab[idx].emotion == EMO_RAGE) &&
+                    rng_float() < 0.10f) {
+                    marks[i].post_punct = "!";
+                } else {
+                    marks[i].post_punct = ".";
+                }
+                after_period = 1;
+            }
+            continue;
+        }
+
+        /* Preposition handling: if preceded by a verb, this was glued.
+         * Add period after the preposition. */
+        if (vocab[idx].is_preposition && i > 0) {
+            /* Check if previous real word was a verb */
+            int prev_real = -1;
+            for (int j = i - 1; j >= 0; j--) {
+                if (!is_ghost_word(line->words[j], lang)) {
+                    prev_real = j;
+                    break;
+                }
+            }
+            if (prev_real >= 0 && vocab[line->words[prev_real]].is_verb) {
+                /* Glued to verb — period after preposition */
+                marks[i].post_punct = ".";
+                after_period = 1;
+                continue;
+            }
+        }
+
+        /* Noun sequence handling: if previous real word is also a noun
+         * (not verb, not adjective, not connective, not preposition, not ghost) */
+        if (i > 0 && !vocab[idx].is_verb && !vocab[idx].is_adjective &&
+            !vocab[idx].is_connective && !vocab[idx].is_preposition) {
+            int prev_real = -1;
+            for (int j = i - 1; j >= 0; j--) {
+                if (!is_ghost_word(line->words[j], lang)) {
+                    prev_real = j;
+                    break;
+                }
+            }
+            if (prev_real >= 0) {
+                int pidx = line->words[prev_real];
+                /* Previous was noun-like (not verb, not connective, not preposition) */
+                if (!vocab[pidx].is_verb && !vocab[pidx].is_connective &&
+                    !vocab[pidx].is_preposition &&
+                    marks[prev_real].post_punct[0] == '\0') {
+                    /* Check tension pair → dash; else comma */
+                    float tens = tension_score(pidx, idx);
+                    if (tens > 0.0f) {
+                        marks[i].pre_punct = " \xe2\x80\x94 ";  /* " — " (em-dash) */
+                    } else {
+                        marks[i].pre_punct = ", ";
+                    }
+                }
+            }
+        }
+
+        /* Last word of line: period if not already punctuated and not ghost */
+        if (i == n - 1 && marks[i].post_punct[0] == '\0' && !ghost) {
+            /* Check for exclamation */
+            if (vocab[idx].mass > 0.80f &&
+                (vocab[idx].emotion == EMO_TRAUMA || vocab[idx].emotion == EMO_RAGE) &&
+                rng_float() < 0.10f) {
+                marks[i].post_punct = "!";
+            } else {
+                marks[i].post_punct = ".";
+            }
+        }
+    }
+}
+
 /* ─── FORMAT AND PRINT HAIKU ────────────────────────────────────────── */
 
 static int haiku_to_string(const Haiku *h, char *buf, int bufsize) {
     int pos = 0;
     for (int ln = 0; ln < 3; ln++) {
         const Line *line = &h->lines[ln];
+        PunctMark marks[MAX_LINE_WORDS];
+        memset(marks, 0, sizeof(marks));
+        punctuate_line(line, marks);
+
         for (int w = 0; w < line->count; w++) {
-            if (w > 0 && pos < bufsize - 1) buf[pos++] = ' ';
             int idx = line->words[w];
             const char *text = vocab[idx].text;
-            int len = (int)strlen(text);
-            if (pos + len < bufsize) {
-                memcpy(buf + pos, text, (size_t)len);
-                pos += len;
+
+            /* Pre-punctuation (sentence break, comma, dash) */
+            if (marks[w].pre_punct[0] != '\0') {
+                int plen = (int)strlen(marks[w].pre_punct);
+                if (pos + plen < bufsize) {
+                    memcpy(buf + pos, marks[w].pre_punct, (size_t)plen);
+                    pos += plen;
+                }
+            } else if (w > 0 && pos < bufsize - 1) {
+                buf[pos++] = ' ';
+            }
+
+            /* Word text (possibly capitalized) */
+            if (marks[w].capitalize && !marks[w].ghost) {
+                char cap[128];
+                int clen = capitalize_word(text, cap, (int)sizeof(cap));
+                if (pos + clen < bufsize) {
+                    memcpy(buf + pos, cap, (size_t)clen);
+                    pos += clen;
+                }
+            } else {
+                int tlen = (int)strlen(text);
+                if (pos + tlen < bufsize) {
+                    memcpy(buf + pos, text, (size_t)tlen);
+                    pos += tlen;
+                }
+            }
+
+            /* Post-punctuation (period, exclamation) */
+            if (marks[w].post_punct[0] != '\0') {
+                int plen = (int)strlen(marks[w].post_punct);
+                if (pos + plen < bufsize) {
+                    memcpy(buf + pos, marks[w].post_punct, (size_t)plen);
+                    pos += plen;
+                }
             }
         }
         /* enjambment dash on last line */
-        if (ln == 2 && h->has_enjamb && pos + 2 < bufsize) {
+        if (ln == 2 && h->has_enjamb && pos + 3 < bufsize) {
             buf[pos++] = ' ';
             buf[pos++] = '-';
             buf[pos++] = '-';
@@ -2389,11 +2866,22 @@ static void print_haiku_colored(const Haiku *h) {
 
     for (int ln = 0; ln < 3; ln++) {
         const Line *line = &h->lines[ln];
+        PunctMark marks[MAX_LINE_WORDS];
+        memset(marks, 0, sizeof(marks));
+        punctuate_line(line, marks);
+
         printf("  ");
         for (int w = 0; w < line->count; w++) {
-            if (w > 0) printf(" ");
             int idx = line->words[w];
             int emo = vocab[idx].emotion;
+
+            /* Pre-punctuation in default color */
+            if (marks[w].pre_punct[0] != '\0') {
+                printf("%s%s%s", ANSI_RESET, marks[w].pre_punct, ANSI_RESET);
+            } else if (w > 0) {
+                printf(" ");
+            }
+
             /* Bold the last word if it's part of a rhyme pair (terza rima) */
             int is_rhyme_word = 0;
             if (w == line->count - 1) {
@@ -2402,10 +2890,24 @@ static void print_haiku_colored(const Haiku *h) {
                 if (ln == 0 && end0 >= 0 && end2 >= 0 && words_rhyme(end0, end2))
                     is_rhyme_word = 1;
             }
+
+            /* Word text in emotion color, possibly capitalized */
+            char cap[128];
+            const char *display_text = vocab[idx].text;
+            if (marks[w].capitalize && !marks[w].ghost) {
+                capitalize_word(display_text, cap, (int)sizeof(cap));
+                display_text = cap;
+            }
+
             if (is_rhyme_word)
-                printf("%s%s%s%s", ANSI_BOLD, emo_color[emo], vocab[idx].text, ANSI_RESET);
+                printf("%s%s%s%s", ANSI_BOLD, emo_color[emo], display_text, ANSI_RESET);
             else
-                printf("%s%s%s", emo_color[emo], vocab[idx].text, ANSI_RESET);
+                printf("%s%s%s", emo_color[emo], display_text, ANSI_RESET);
+
+            /* Post-punctuation in default color */
+            if (marks[w].post_punct[0] != '\0') {
+                printf("%s%s%s", ANSI_RESET, marks[w].post_punct, ANSI_RESET);
+            }
         }
         if (ln == 2 && h->has_enjamb) {
             printf(" %s--%s", ANSI_DIM, ANSI_RESET);
@@ -3047,6 +3549,19 @@ static const char *emo_class[EMO_COUNT] = {
     "desire", "void", "rage", "tenderness", "julia"
 };
 
+/* HTML-escape a string (minimal: &, <, >) into buf, return bytes written */
+static int html_escape(const char *src, char *dst, int dstsize) {
+    int pos = 0;
+    for (const char *p = src; *p && pos < dstsize - 6; p++) {
+        if (*p == '&') { memcpy(dst + pos, "&amp;", 5); pos += 5; }
+        else if (*p == '<') { memcpy(dst + pos, "&lt;", 4); pos += 4; }
+        else if (*p == '>') { memcpy(dst + pos, "&gt;", 4); pos += 4; }
+        else dst[pos++] = *p;
+    }
+    if (pos < dstsize) dst[pos] = '\0';
+    return pos;
+}
+
 static int haiku_to_html(const Haiku *h, char *buf, int bufsize) {
     int pos = 0;
     /* Detect rhyming end words for visual marking */
@@ -3057,18 +3572,51 @@ static int haiku_to_html(const Haiku *h, char *buf, int bufsize) {
     pos += snprintf(buf + pos, (size_t)(bufsize - pos), "<div class='haiku'>");
     for (int ln = 0; ln < 3; ln++) {
         const Line *line = &h->lines[ln];
+        PunctMark marks[MAX_LINE_WORDS];
+        memset(marks, 0, sizeof(marks));
+        punctuate_line(line, marks);
+
         pos += snprintf(buf + pos, (size_t)(bufsize - pos), "<span class='line'>");
         for (int w = 0; w < line->count; w++) {
-            if (w > 0) pos += snprintf(buf + pos, (size_t)(bufsize - pos), " ");
             int idx = line->words[w];
             int emo = vocab[idx].emotion;
+
+            /* Pre-punctuation (plain text, not colored) */
+            if (marks[w].pre_punct[0] != '\0') {
+                char esc[64];
+                html_escape(marks[w].pre_punct, esc, (int)sizeof(esc));
+                pos += snprintf(buf + pos, (size_t)(bufsize - pos), "%s", esc);
+            } else if (w > 0) {
+                pos += snprintf(buf + pos, (size_t)(bufsize - pos), " ");
+            }
+
+            /* Word text (possibly capitalized) */
+            char display[128];
+            if (marks[w].capitalize && !marks[w].ghost) {
+                capitalize_word(vocab[idx].text, display, (int)sizeof(display));
+            } else {
+                int tlen = (int)strlen(vocab[idx].text);
+                if (tlen > (int)sizeof(display) - 1) tlen = (int)sizeof(display) - 1;
+                memcpy(display, vocab[idx].text, (size_t)tlen);
+                display[tlen] = '\0';
+            }
+
             /* Mark last word of lines 1 and 3 if they rhyme */
             int is_rhyme_end = (has_rhyme && w == line->count - 1 && (ln == 0 || ln == 2));
+            char esc_word[256];
+            html_escape(display, esc_word, (int)sizeof(esc_word));
             pos += snprintf(buf + pos, (size_t)(bufsize - pos),
                            "<span class='%s%s'>%s</span>",
                            emo_class[emo],
                            is_rhyme_end ? " rhyme" : "",
-                           vocab[idx].text);
+                           esc_word);
+
+            /* Post-punctuation (plain text) */
+            if (marks[w].post_punct[0] != '\0') {
+                char esc[16];
+                html_escape(marks[w].post_punct, esc, (int)sizeof(esc));
+                pos += snprintf(buf + pos, (size_t)(bufsize - pos), "%s", esc);
+            }
         }
         if (ln == 2 && h->has_enjamb) {
             pos += snprintf(buf + pos, (size_t)(bufsize - pos),
