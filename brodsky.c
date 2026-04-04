@@ -32,6 +32,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <float.h>
+#include <stdint.h>
 
 #ifdef __unix__
 #include <unistd.h>
@@ -60,6 +61,7 @@
 #define WEB_PORT        3003
 #define MAX_CYCLE_HAIKU 7
 #define EXHALE_COUNT    12
+#define MAX_PROPHECY    32
 
 /* ─── CORPUS METAWEIGHTS ───────────────────────────────────────────── */
 
@@ -117,6 +119,22 @@ typedef struct {
     float freq[CH_COUNT];
     float coupling;      /* K in Kuramoto model */
 } Chambers;
+
+/* ─── PROPHECY SYSTEM ──────────────────────────────────────────────── */
+
+typedef struct {
+    int   target;     /* vocab index of predicted word */
+    float strength;   /* how strongly predicted */
+    int   age;        /* steps since prediction */
+    int   fulfilled;  /* 1 = word appeared */
+} Prophecy;
+
+typedef struct {
+    Prophecy p[MAX_PROPHECY];
+    int n;
+    int fulfilled_total;  /* running count of all fulfilled prophecies */
+    int created_total;    /* running count of all created prophecies */
+} ProphecySystem;
 
 /* ─── LANGUAGES ────────────────────────────────────────────────────── */
 
@@ -633,6 +651,20 @@ static float corpus_bigram_score(int last_word, int cand_idx) {
     return 0.0f;
 }
 
+/* Find the strongest bigram target from a given word, or -1 if none */
+static int corpus_best_bigram(int word_idx) {
+    if (word_idx < 0) return -1;
+    int best = -1;
+    float best_w = 0.0f;
+    for (int i = 0; i < corpus_bg.count; i++) {
+        if (corpus_bg.src[i] == word_idx && corpus_bg.weight[i] > best_w) {
+            best_w = corpus_bg.weight[i];
+            best = corpus_bg.dst[i];
+        }
+    }
+    return best;
+}
+
 /* ─── CORPUS HEBBIAN TABLE (co-occurrence within window) ───────────── */
 
 typedef struct {
@@ -801,6 +833,72 @@ static void load_all_corpora(void) {
     }
 }
 
+/* ─── PROPHECY FUNCTIONS ───────────────────────────────────────────── */
+
+static void prophecy_init(ProphecySystem *ps) {
+    ps->n = 0;
+    ps->fulfilled_total = 0;
+    ps->created_total = 0;
+}
+
+static void prophecy_add(ProphecySystem *ps, int target, float strength) {
+    /* don't add duplicate targets */
+    for (int i = 0; i < ps->n; i++) {
+        if (ps->p[i].target == target && !ps->p[i].fulfilled) {
+            /* reinforce existing prophecy */
+            ps->p[i].strength += strength * 0.5f;
+            return;
+        }
+    }
+    if (ps->n < MAX_PROPHECY) {
+        ps->p[ps->n].target = target;
+        ps->p[ps->n].strength = strength;
+        ps->p[ps->n].age = 0;
+        ps->p[ps->n].fulfilled = 0;
+        ps->n++;
+        ps->created_total++;
+    } else {
+        /* overwrite oldest unfulfilled prophecy */
+        int oldest = -1, max_age = -1;
+        for (int i = 0; i < ps->n; i++) {
+            if (ps->p[i].age > max_age) {
+                max_age = ps->p[i].age;
+                oldest = i;
+            }
+        }
+        if (oldest >= 0) {
+            ps->p[oldest].target = target;
+            ps->p[oldest].strength = strength;
+            ps->p[oldest].age = 0;
+            ps->p[oldest].fulfilled = 0;
+            ps->created_total++;
+        }
+    }
+}
+
+/* Check fulfillment, age all prophecies, remove old/fulfilled ones */
+static void prophecy_update(ProphecySystem *ps, int generated_word) {
+    /* check fulfillment */
+    for (int i = 0; i < ps->n; i++) {
+        if (!ps->p[i].fulfilled && ps->p[i].target == generated_word) {
+            ps->p[i].fulfilled = 1;
+            ps->fulfilled_total++;
+        }
+    }
+    /* age all */
+    for (int i = 0; i < ps->n; i++) {
+        ps->p[i].age++;
+    }
+    /* remove old (age > 50) or fulfilled */
+    int write = 0;
+    for (int i = 0; i < ps->n; i++) {
+        if (ps->p[i].age <= 50 && !ps->p[i].fulfilled) {
+            ps->p[write++] = ps->p[i];
+        }
+    }
+    ps->n = write;
+}
+
 /* ─── BIGRAM CHAIN ──────────────────────────────────────────────────── */
 
 /* Simple bigram: emotion-to-emotion transition probabilities */
@@ -888,6 +986,12 @@ typedef struct {
 
     /* current target language */
     int   current_lang;
+
+    /* prophecy system */
+    ProphecySystem prophecy;
+
+    /* total cycles across all sessions (persisted via spore) */
+    int total_cycles;
 } Organism;
 
 static Organism org;
@@ -921,6 +1025,7 @@ static void organism_init(void) {
 
     hebbian_init();
     bigram_init();
+    prophecy_init(&org.prophecy);
 }
 
 /* ─── INGEST USER PROMPT ────────────────────────────────────────────── */
@@ -1526,8 +1631,16 @@ static float score_word(int idx) {
     if (w->emotion == EMO_JULIA)
         dario += org.julia * 0.5f;
 
-    /* Seasonal bias */
-    dario += season_bias[org.season][w->emotion] * 0.15f;
+    /* F: Prophecy — unfulfilled predictions create pressure */
+    float prophecy_pull = 0.0f;
+    for (int p = 0; p < org.prophecy.n; p++) {
+        if (!org.prophecy.p[p].fulfilled && org.prophecy.p[p].target == idx) {
+            prophecy_pull += org.prophecy.p[p].strength * logf(1.0f + (float)org.prophecy.p[p].age);
+        }
+    }
+    dario += prophecy_pull * 0.4f;
+    /* keep seasonal bias too, but weaker */
+    dario += season_bias[org.season][w->emotion] * 0.1f;
 
     /* clamp: dario is always >= 0 */
     if (dario < 0.0f) dario = 0.0f;
@@ -1732,6 +1845,12 @@ static void generate_line(Line *line, int target_syl,
         if (org.last_word >= 0)
             tension_used(org.last_word, idx);
 
+        /* prophecy: check fulfillment, age, add new prediction */
+        prophecy_update(&org.prophecy, idx);
+        /* predict next from corpus bigrams */
+        int pred = corpus_best_bigram(idx);
+        if (pred >= 0) prophecy_add(&org.prophecy, pred, 0.5f);
+
         org.last_emotion = vocab[idx].emotion;
         org.prev_was_adj = vocab[idx].is_adjective;
         org.last_word = idx;
@@ -1855,6 +1974,15 @@ static void inter_haiku_update(void) {
 
     /* julia grows */
     org.julia += 0.08f + rng_float() * 0.05f;
+
+    /* prophecy debt grows Julia — unfulfilled predictions = longing */
+    {
+        float debt = 0;
+        for (int p = 0; p < org.prophecy.n; p++)
+            if (!org.prophecy.p[p].fulfilled) debt += (float)org.prophecy.p[p].age * 0.01f;
+        org.julia += debt * 0.05f;
+    }
+
     if (org.julia > 1.0f) org.julia = 1.0f;
 
     /* destiny drift from exhale */
@@ -1922,7 +2050,9 @@ static void print_haiku_header(int haiku_num) {
     printf("\n  %s[%d]%s", ANSI_DIM, haiku_num, ANSI_RESET);
     printf("  %sjulia=%.2f%s", emo_color[EMO_JULIA], org.julia, ANSI_RESET);
     printf("  %sτ=%.2f%s", ANSI_DIM, org.tau, ANSI_RESET);
-    printf("  %s%s%s\n", ANSI_DIM, vel_names[org.velocity], ANSI_RESET);
+    printf("  %s%s%s", ANSI_DIM, vel_names[org.velocity], ANSI_RESET);
+    printf("  %sprophecy:%d/%d%s\n", ANSI_DIM,
+           org.prophecy.fulfilled_total, org.prophecy.created_total, ANSI_RESET);
 }
 
 static void print_chambers(void) {
@@ -1947,6 +2077,7 @@ static void print_cycle_footer(int haiku_count) {
 
 static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
     cycle_reset();
+    org.total_cycles++;
     int out_pos = 0;
 
     print_cycle_header(cycle_num);
@@ -1985,6 +2116,157 @@ static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
     return org.haiku_in_cycle;
 }
 
+/* ─── SPORE: PERSISTENCE ──────────────────────────────────────────── */
+
+#define SPORE_MAGIC   0x42524F44  /* "BROD" */
+#define SPORE_VERSION 1
+#define SPORE_PATH    "brodsky.spore"
+
+static int tension_pair_count(void) {
+    int n = 0;
+    while (tensions[n].a) n++;
+    return n;
+}
+
+static void spore_save(const char *path) {
+    FILE *f = fopen(path, "wb");
+    if (!f) return;
+
+    uint32_t magic = SPORE_MAGIC;
+    uint32_t version = SPORE_VERSION;
+    fwrite(&magic, 4, 1, f);
+    fwrite(&version, 4, 1, f);
+
+    /* tension pair use_counts and crystallized flags */
+    int ntens = tension_pair_count();
+    fwrite(&ntens, sizeof(int), 1, f);
+    for (int i = 0; i < ntens; i++) {
+        fwrite(&tensions[i].use_count, sizeof(int), 1, f);
+        fwrite(&tensions[i].crystallized, sizeof(int), 1, f);
+    }
+
+    /* corpus bigrams */
+    fwrite(&corpus_bg.count, sizeof(int), 1, f);
+    fwrite(corpus_bg.src,    sizeof(int),   (size_t)corpus_bg.count, f);
+    fwrite(corpus_bg.dst,    sizeof(int),   (size_t)corpus_bg.count, f);
+    fwrite(corpus_bg.weight, sizeof(float), (size_t)corpus_bg.count, f);
+
+    /* corpus hebbians */
+    fwrite(&corpus_hb.count, sizeof(int), 1, f);
+    fwrite(corpus_hb.word_a, sizeof(int),   (size_t)corpus_hb.count, f);
+    fwrite(corpus_hb.word_b, sizeof(int),   (size_t)corpus_hb.count, f);
+    fwrite(corpus_hb.weight, sizeof(float), (size_t)corpus_hb.count, f);
+
+    /* chamber phases */
+    fwrite(org.chambers.phase, sizeof(float), CH_COUNT, f);
+
+    /* julia * 0.3 (decayed) */
+    float julia_decay = org.julia * 0.3f;
+    fwrite(&julia_decay, sizeof(float), 1, f);
+
+    /* prophecy state */
+    fwrite(&org.prophecy.n, sizeof(int), 1, f);
+    fwrite(&org.prophecy.fulfilled_total, sizeof(int), 1, f);
+    fwrite(&org.prophecy.created_total, sizeof(int), 1, f);
+    for (int i = 0; i < org.prophecy.n; i++) {
+        fwrite(&org.prophecy.p[i].target,    sizeof(int),   1, f);
+        fwrite(&org.prophecy.p[i].strength,  sizeof(float), 1, f);
+        fwrite(&org.prophecy.p[i].age,       sizeof(int),   1, f);
+        fwrite(&org.prophecy.p[i].fulfilled, sizeof(int),   1, f);
+    }
+
+    /* total cycles */
+    fwrite(&org.total_cycles, sizeof(int), 1, f);
+
+    fclose(f);
+}
+
+static void spore_load(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return; /* no spore = fresh start */
+
+    uint32_t magic = 0, version = 0;
+    if (fread(&magic, 4, 1, f) != 1 || magic != SPORE_MAGIC) {
+        fclose(f);
+        return;
+    }
+    if (fread(&version, 4, 1, f) != 1 || version != SPORE_VERSION) {
+        fclose(f);
+        return;
+    }
+
+    /* tension pair use_counts and crystallized flags */
+    int ntens = 0;
+    if (fread(&ntens, sizeof(int), 1, f) == 1) {
+        int current_ntens = tension_pair_count();
+        int to_read = ntens < current_ntens ? ntens : current_ntens;
+        for (int i = 0; i < to_read; i++) {
+            if (fread(&tensions[i].use_count, sizeof(int), 1, f) != 1) break;
+            if (fread(&tensions[i].crystallized, sizeof(int), 1, f) != 1) break;
+        }
+        /* skip extra if spore has more than current code */
+        for (int i = to_read; i < ntens; i++) {
+            int dummy;
+            if (fread(&dummy, sizeof(int), 1, f) != 1) break;
+            if (fread(&dummy, sizeof(int), 1, f) != 1) break;
+        }
+    }
+
+    /* corpus bigrams: spore overwrites fresh corpus state */
+    int bg_count = 0;
+    if (fread(&bg_count, sizeof(int), 1, f) == 1 && bg_count > 0 && bg_count <= CORPUS_BIGRAM_MAX) {
+        corpus_bg.count = bg_count;
+        if (fread(corpus_bg.src,    sizeof(int),   (size_t)bg_count, f) != (size_t)bg_count) { fclose(f); return; }
+        if (fread(corpus_bg.dst,    sizeof(int),   (size_t)bg_count, f) != (size_t)bg_count) { fclose(f); return; }
+        if (fread(corpus_bg.weight, sizeof(float), (size_t)bg_count, f) != (size_t)bg_count) { fclose(f); return; }
+    }
+
+    /* corpus hebbians */
+    int hb_count = 0;
+    if (fread(&hb_count, sizeof(int), 1, f) == 1 && hb_count > 0 && hb_count <= CORPUS_HEBBIAN_MAX) {
+        corpus_hb.count = hb_count;
+        if (fread(corpus_hb.word_a, sizeof(int),   (size_t)hb_count, f) != (size_t)hb_count) { fclose(f); return; }
+        if (fread(corpus_hb.word_b, sizeof(int),   (size_t)hb_count, f) != (size_t)hb_count) { fclose(f); return; }
+        if (fread(corpus_hb.weight, sizeof(float), (size_t)hb_count, f) != (size_t)hb_count) { fclose(f); return; }
+    }
+
+    /* chamber phases */
+    if (fread(org.chambers.phase, sizeof(float), CH_COUNT, f) != CH_COUNT) { fclose(f); return; }
+
+    /* julia (decayed) */
+    float julia_decay = 0.0f;
+    if (fread(&julia_decay, sizeof(float), 1, f) != 1) { fclose(f); return; }
+    org.julia = julia_decay;
+
+    /* prophecy state */
+    int pn = 0;
+    if (fread(&pn, sizeof(int), 1, f) == 1 && pn >= 0 && pn <= MAX_PROPHECY) {
+        if (fread(&org.prophecy.fulfilled_total, sizeof(int), 1, f) != 1) { fclose(f); return; }
+        if (fread(&org.prophecy.created_total, sizeof(int), 1, f) != 1) { fclose(f); return; }
+        org.prophecy.n = pn;
+        for (int i = 0; i < pn; i++) {
+            if (fread(&org.prophecy.p[i].target,    sizeof(int),   1, f) != 1) break;
+            if (fread(&org.prophecy.p[i].strength,  sizeof(float), 1, f) != 1) break;
+            if (fread(&org.prophecy.p[i].age,       sizeof(int),   1, f) != 1) break;
+            if (fread(&org.prophecy.p[i].fulfilled, sizeof(int),   1, f) != 1) break;
+        }
+    }
+
+    /* total cycles */
+    if (fread(&org.total_cycles, sizeof(int), 1, f) != 1) org.total_cycles = 0;
+
+    fclose(f);
+    printf("[brodsky] spore loaded: %s\n", path);
+}
+
+/* Signal handler: save spore on Ctrl+C */
+static void on_exit_signal(int sig) {
+    (void)sig;
+    spore_save(SPORE_PATH);
+    printf("\n[brodsky] spore saved.\n");
+    exit(0);
+}
+
 /* ─── BANNER ────────────────────────────────────────────────────────── */
 
 static void print_banner(void) {
@@ -2004,6 +2286,11 @@ static void print_banner(void) {
     printf("  %splanet: %.3f · calendar: %.3f · season: %s%s\n",
            ANSI_DIM, org.planet_diss, org.cal_diss,
            season_names[org.season], ANSI_RESET);
+    if (org.total_cycles > 0)
+        printf("  %spersistence: %d prior cycles · prophecy: %d/%d%s\n",
+               ANSI_DIM, org.total_cycles,
+               org.prophecy.fulfilled_total, org.prophecy.created_total,
+               ANSI_RESET);
     printf("\n");
 }
 
@@ -2018,7 +2305,12 @@ static void repl(void) {
         printf("\n%sbrodsky>%s ", ANSI_BOLD, ANSI_RESET);
         fflush(stdout);
 
-        if (!fgets(input, (int)sizeof(input), stdin)) break;
+        if (!fgets(input, (int)sizeof(input), stdin)) {
+            /* EOF — save spore before exiting */
+            spore_save(SPORE_PATH);
+            printf("\n[brodsky] spore saved.\n");
+            break;
+        }
 
         /* strip newline */
         int len = (int)strlen(input);
@@ -2035,6 +2327,8 @@ static void repl(void) {
 
         if (strcmp(input, "q") == 0 || strcmp(input, "quit") == 0 ||
             strcmp(input, "exit") == 0) {
+            spore_save(SPORE_PATH);
+            printf("\n  %s[brodsky] spore saved.%s\n", ANSI_DIM, ANSI_RESET);
             printf("\n  %s\"what gets left of a man amounts to a part.%s\n",
                    ANSI_DIM, ANSI_RESET);
             printf("  %s to his spoken part. to a part of speech.\"%s\n\n",
@@ -2052,6 +2346,7 @@ static void repl(void) {
             printf("  vocab        show vocabulary stats\n");
             printf("  destiny      show destiny vector\n");
             printf("  exhale       show exhale fragments\n");
+            printf("  prophecy     show current prophecies\n");
             printf("  N            generate N cycles\n");
             printf("  q/quit       exit\n");
             continue;
@@ -2123,6 +2418,26 @@ static void repl(void) {
         if (strcmp(input, "exhale") == 0) {
             for (int i = 0; i < EXHALE_COUNT; i++)
                 printf("  %s\"%s\"%s\n", ANSI_DIM, exhale[i].text, ANSI_RESET);
+            continue;
+        }
+
+        if (strcmp(input, "prophecy") == 0) {
+            printf("  %sprophecies: %d active, %d fulfilled / %d total%s\n",
+                   ANSI_DIM, org.prophecy.n,
+                   org.prophecy.fulfilled_total, org.prophecy.created_total,
+                   ANSI_RESET);
+            for (int i = 0; i < org.prophecy.n; i++) {
+                Prophecy *pp = &org.prophecy.p[i];
+                const char *word = (pp->target >= 0 && pp->target < vocab_size)
+                    ? vocab[pp->target].text : "???";
+                printf("  %s[%d] \"%s\" str=%.2f age=%d%s%s\n",
+                       pp->fulfilled ? emo_color[EMO_RESONANCE] : emo_color[EMO_JULIA],
+                       i, word, pp->strength, pp->age,
+                       pp->fulfilled ? " FULFILLED" : "",
+                       ANSI_RESET);
+            }
+            if (org.prophecy.n == 0)
+                printf("  %s(no active prophecies)%s\n", ANSI_DIM, ANSI_RESET);
             continue;
         }
 
@@ -2318,6 +2633,14 @@ int main(int argc, char **argv) {
     load_vocabulary();
     load_all_corpora();
     organism_init();
+
+    /* load spore (persistence) after init — merges saved state */
+    spore_load(SPORE_PATH);
+
+    /* install signal handler for clean exit */
+#if defined(__unix__) || defined(__APPLE__)
+    signal(SIGINT, on_exit_signal);
+#endif
 
     int web_mode = 0;
     for (int i = 1; i < argc; i++) {
