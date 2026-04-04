@@ -63,6 +63,22 @@
 #define EXHALE_COUNT    12
 #define MAX_PROPHECY    32
 
+/* ─── TERZA RIMA RHYME ENGINE ──────────────────────────────────────── */
+
+#define MAX_RHYME_CLASSES 512
+#define RHYME_CLASS_MAX   64    /* max members per class */
+#define RHYME_BOOST       3.5f  /* score multiplier for rhyming candidates */
+#define RHYME_FALLBACK    1.5f  /* weaker boost for same-last-char fallback */
+
+typedef struct {
+    int members[RHYME_CLASS_MAX];
+    int count;
+} RhymeClass;
+
+static RhymeClass rhyme_classes[MAX_RHYME_CLASSES];
+static int         rhyme_class_count = 0;
+static int         word_rhyme_class[MAX_VOCAB]; /* which class each word belongs to */
+
 /* ─── DOE-LITE PARLIAMENT ──────────────────────────────────────────── */
 
 #define DOE_EXPERTS     4
@@ -309,6 +325,175 @@ static void load_vocabulary(void) {
     load_raw_array(raw_he, RAW_HE_COUNT);
     load_raw_array(raw_fr, RAW_FR_COUNT);
     load_raw_array(raw_es, RAW_ES_COUNT);
+}
+
+/* ─── RHYME FINGERPRINT ────────────────────────────────────────────── */
+/*
+ * Extract a rhyme fingerprint from a word's ending.
+ * For Latin-alphabet words (EN/FR/ES): find last vowel cluster + trailing consonants.
+ * For UTF-8 words (RU/HE): use last 3 bytes of the word.
+ * Returns a hash that groups rhyming words into the same class.
+ *
+ * "skull" → last vowel 'u' + "ll" → fingerprint("ull")
+ * "null"  → last vowel 'u' + "ll" → fingerprint("ull") → same class = rhyme
+ * "death" → last vowel 'ea' + "th" → fingerprint("eath")
+ * "breath"→ last vowel 'ea' + "th" → fingerprint("eath") → rhyme
+ */
+
+static int is_latin_vowel(unsigned char c) {
+    c = (unsigned char)tolower(c);
+    return (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' || c == 'y');
+}
+
+/* Extract the rhyme portion of a word into buf (null-terminated).
+ * Returns length of the rhyme portion, or 0 if extraction fails. */
+static int extract_rhyme_tail(const char *word, char *buf, int bufsize) {
+    int len = (int)strlen(word);
+    if (len == 0) { buf[0] = '\0'; return 0; }
+
+    const unsigned char *w = (const unsigned char *)word;
+
+    /* Check if word is primarily Latin alphabet */
+    int latin = 0, nonlatin = 0;
+    for (int i = 0; i < len; i++) {
+        if (w[i] < 0x80) {
+            if ((w[i] >= 'a' && w[i] <= 'z') || (w[i] >= 'A' && w[i] <= 'Z'))
+                latin++;
+        } else {
+            nonlatin++;
+        }
+    }
+
+    if (latin > nonlatin && latin > 0) {
+        /* Latin-alphabet word: find last vowel cluster + trailing consonants.
+         * If word ends in a vowel (no trailing consonants), include the
+         * preceding consonant(s) to avoid overly broad classes.
+         * "fire" → "ire" not "e", "exile" → "ile" not "e" */
+        int last_vowel = -1;
+        for (int i = len - 1; i >= 0; i--) {
+            if (w[i] < 0x80 && is_latin_vowel(w[i])) {
+                last_vowel = i;
+                break;
+            }
+        }
+        if (last_vowel < 0) {
+            /* No vowel found — use last 2 characters */
+            int start = len > 2 ? len - 2 : 0;
+            int rlen = len - start;
+            if (rlen >= bufsize) rlen = bufsize - 1;
+            for (int i = 0; i < rlen; i++)
+                buf[i] = (char)tolower(w[start + i]);
+            buf[rlen] = '\0';
+            return rlen;
+        }
+        /* Include the vowel cluster: walk backwards through consecutive vowels */
+        int start = last_vowel;
+        while (start > 0 && w[start - 1] < 0x80 && is_latin_vowel(w[start - 1]))
+            start--;
+        /* If the vowel cluster IS at the end of the word (no trailing consonants),
+         * include one or more preceding consonants to be more specific.
+         * "fire" → start at 'i'(pos 1), end is 'e'(pos 3): tail="ire", not "e"
+         * But if we only found the final vowel like 'e' in "exile" → start=4,
+         * we need to walk back through consonants before the vowel cluster. */
+        int tail_len = len - start;
+        if (tail_len <= 1 && start > 0) {
+            /* Tail is just one vowel character — too broad.
+             * Walk back to include preceding consonant cluster + another vowel if present. */
+            int ext = start - 1;
+            /* include consonants before the vowel cluster */
+            while (ext > 0 && w[ext - 1] < 0x80 &&
+                   ((w[ext - 1] >= 'a' && w[ext - 1] <= 'z') || (w[ext - 1] >= 'A' && w[ext - 1] <= 'Z')) &&
+                   !is_latin_vowel(w[ext - 1]))
+                ext--;
+            /* include one more vowel cluster if present (the stressed vowel) */
+            while (ext > 0 && w[ext - 1] < 0x80 && is_latin_vowel(w[ext - 1]))
+                ext--;
+            start = ext;
+        }
+        int rlen = len - start;
+        if (rlen >= bufsize) rlen = bufsize - 1;
+        for (int i = 0; i < rlen; i++)
+            buf[i] = (char)tolower(w[start + i]);
+        buf[rlen] = '\0';
+        return rlen;
+    } else {
+        /* Non-Latin (UTF-8): use last 3-4 bytes as fingerprint.
+         * This works because rhyme IS about endings, and UTF-8 endings
+         * for Cyrillic/Hebrew encode the final phonemes directly. */
+        int start = len > 4 ? len - 4 : 0;
+        /* Align to UTF-8 character boundary: don't start on a continuation byte */
+        while (start < len && (w[start] & 0xC0) == 0x80) start++;
+        int rlen = len - start;
+        if (rlen >= bufsize) rlen = bufsize - 1;
+        memcpy(buf, w + start, (size_t)rlen);
+        buf[rlen] = '\0';
+        return rlen;
+    }
+}
+
+/* Hash a rhyme tail string to a class index */
+static unsigned rhyme_hash(const char *tail) {
+    unsigned h = 5381;
+    for (const char *p = tail; *p; p++)
+        h = h * 33 + (unsigned)(unsigned char)*p;
+    return h % MAX_RHYME_CLASSES;
+}
+
+/* Build the rhyme class table from current vocabulary.
+ * Called once at startup after load_vocabulary(). Deterministic. */
+static void build_rhyme_table(void) {
+    /* Clear */
+    rhyme_class_count = 0;
+    for (int i = 0; i < MAX_RHYME_CLASSES; i++)
+        rhyme_classes[i].count = 0;
+    for (int i = 0; i < MAX_VOCAB; i++)
+        word_rhyme_class[i] = -1;
+
+    for (int i = 0; i < vocab_size; i++) {
+        char tail[32];
+        int tlen = extract_rhyme_tail(vocab[i].text, tail, (int)sizeof(tail));
+        if (tlen == 0) {
+            word_rhyme_class[i] = -1;
+            continue;
+        }
+        unsigned cls = rhyme_hash(tail);
+        word_rhyme_class[i] = (int)cls;
+
+        /* Add to class if not already there */
+        RhymeClass *rc = &rhyme_classes[cls];
+        int already = 0;
+        for (int j = 0; j < rc->count; j++) {
+            if (rc->members[j] == i) { already = 1; break; }
+        }
+        if (!already && rc->count < RHYME_CLASS_MAX) {
+            rc->members[rc->count++] = i;
+        }
+    }
+
+    /* Count non-empty classes */
+    for (int i = 0; i < MAX_RHYME_CLASSES; i++) {
+        if (rhyme_classes[i].count > 0)
+            rhyme_class_count++;
+    }
+}
+
+/* Check if two words rhyme (same rhyme class, not same word) */
+static int words_rhyme(int a, int b) {
+    if (a < 0 || b < 0 || a == b) return 0;
+    if (word_rhyme_class[a] < 0 || word_rhyme_class[b] < 0) return 0;
+    return word_rhyme_class[a] == word_rhyme_class[b];
+}
+
+/* Fallback: do the last characters match? (weaker rhyme) */
+static int words_near_rhyme(int a, int b) {
+    if (a < 0 || b < 0 || a == b) return 0;
+    const char *wa = vocab[a].text;
+    const char *wb = vocab[b].text;
+    int la = (int)strlen(wa);
+    int lb = (int)strlen(wb);
+    if (la < 2 || lb < 2) return 0;
+    /* Compare last 2 bytes (works for ASCII; approximate for UTF-8) */
+    return (wa[la-1] == wb[lb-1] && wa[la-2] == wb[lb-2]);
 }
 
 /* ─── LANGUAGE DETECTION ────────────────────────────────────────────── */
@@ -1023,6 +1208,9 @@ typedef struct {
 
     /* total cycles across all sessions (persisted via spore) */
     int total_cycles;
+
+    /* terza rima chain: last word of line 2 from previous haiku */
+    int prev_middle_end;  /* vocab index, or -1 if no chain */
 } Organism;
 
 static Organism org;
@@ -1046,6 +1234,7 @@ static void organism_init(void) {
     org.velocity = VEL_WALK;
     org.last_word = -1;
     org.current_lang = LANG_EN;
+    org.prev_middle_end = -1;
     org.planet_diss = planetary_dissonance();
     org.cal_diss = calendar_dissonance();
     org.season = current_season();
@@ -1171,6 +1360,7 @@ static void cycle_reset(void) {
     org.prev_was_adj = 0;
     org.last_word = -1;
     org.enjamb = 0;
+    org.prev_middle_end = -1;  /* terza rima chain resets per cycle */
     memset(org.used, 0, sizeof(org.used));
 
     /* refresh environmental readings */
@@ -1840,9 +2030,11 @@ static float score_word(int idx) {
  * target_lang: primary language for this line
  * ghost_lang:  if >= 0, allow ONE word from this language (ghost voice)
  * ghost_used:  pointer to flag, set to 1 once ghost word is emitted
+ * rhyme_target: if >= 0, boost words that rhyme with vocab[rhyme_target]
  */
 static int sample_word(int syl_remaining, int force_max_syl,
-                       int target_lang, int ghost_lang, int *ghost_used) {
+                       int target_lang, int ghost_lang, int *ghost_used,
+                       int rhyme_target) {
     float logits[MAX_VOCAB];
     int   candidates[MAX_VOCAB];
     int   n_cand = 0;
@@ -1947,6 +2139,21 @@ static int sample_word(int syl_remaining, int force_max_syl,
     for (int i = 0; i < n_cand; i++)
         logits[i] *= vel_mult;
 
+    /* rhyme boost: if rhyme_target is set, prefer words that rhyme.
+     * This is a PREFERENCE — if no rhyme candidate fits, poetry continues.
+     * Terza rima: ABA BCB CDC... */
+    if (rhyme_target >= 0) {
+        for (int i = 0; i < n_cand; i++) {
+            int ci = candidates[i];
+            if (ci == rhyme_target) continue; /* don't repeat the exact word */
+            if (words_rhyme(ci, rhyme_target)) {
+                logits[i] *= RHYME_BOOST;
+            } else if (words_near_rhyme(ci, rhyme_target)) {
+                logits[i] *= RHYME_FALLBACK;
+            }
+        }
+    }
+
     /* softmax with temperature */
     float max_l = -1e30f;
     for (int i = 0; i < n_cand; i++)
@@ -1986,12 +2193,14 @@ typedef struct {
 } Line;
 
 /*
- * target_lang: primary language
- * ghost_lang: if >= 0, allow one ghost word from this language
- * ghost_used: pointer to ghost tracking flag
+ * target_lang:  primary language
+ * ghost_lang:   if >= 0, allow one ghost word from this language
+ * ghost_used:   pointer to ghost tracking flag
+ * rhyme_target: if >= 0, last word of line should rhyme with vocab[rhyme_target]
  */
 static void generate_line(Line *line, int target_syl,
-                          int target_lang, int ghost_lang, int *ghost_used) {
+                          int target_lang, int ghost_lang, int *ghost_used,
+                          int rhyme_target) {
     line->count = 0;
     line->syllables = 0;
 
@@ -1999,7 +2208,10 @@ static void generate_line(Line *line, int target_syl,
         int remaining = target_syl - line->syllables;
         /* if only 1-2 syllables left, try to force exact match */
         int force = (remaining <= 2) ? 1 : 0;
-        int idx = sample_word(remaining, force, target_lang, ghost_lang, ghost_used);
+        /* Apply rhyme_target only when placing what is likely the last word
+         * (remaining syllables <= 3). Earlier words generate freely. */
+        int rt = (remaining <= 3 && rhyme_target >= 0) ? rhyme_target : -1;
+        int idx = sample_word(remaining, force, target_lang, ghost_lang, ghost_used, rt);
         if (idx < 0) break;
 
         line->words[line->count++] = idx;
@@ -2060,9 +2272,26 @@ static void generate_haiku(Haiku *h) {
     /* save destiny before line 1 for line 3 averaging */
     float dest_before[DESTINY_DIM];
     memcpy(dest_before, org.destiny, sizeof(dest_before));
+    (void)dest_before;
 
-    /* line 1: pure target language */
-    generate_line(&h->lines[0], target_syl[0], tlang, -1, NULL);
+    /*
+     * TERZA RIMA in 5-7-5:
+     *   Single haiku (ABA): line1=A, line2=B(free), line3=rhymes-with-A
+     *   Chain (terza rima): line1 rhymes with previous haiku's line2 ending
+     *
+     * prev_middle_end = last word of line 2 from previous haiku.
+     * If it exists, line 1 of THIS haiku tries to rhyme with it.
+     */
+
+    /* line 1: rhyme with previous haiku's middle-end (terza rima chain),
+     * or free if this is the first haiku in the cycle */
+    int line1_rhyme = org.prev_middle_end;  /* -1 if no chain */
+    generate_line(&h->lines[0], target_syl[0], tlang, -1, NULL, line1_rhyme);
+
+    /* record line 1 ending word */
+    int end_word_0 = -1;
+    if (h->lines[0].count > 0)
+        end_word_0 = h->lines[0].words[h->lines[0].count - 1];
 
     float dest_after_l1[DESTINY_DIM];
     memcpy(dest_after_l1, org.destiny, sizeof(dest_after_l1));
@@ -2072,8 +2301,13 @@ static void generate_haiku(Haiku *h) {
         org.destiny[d] += (rng_float() - 0.5f) * 0.1f;
     vec_normalize(org.destiny, DESTINY_DIM);
 
-    /* line 2: ghost voice allowed (one word from ghost language) */
-    generate_line(&h->lines[1], target_syl[1], tlang, glang, &ghost_used);
+    /* line 2: ghost voice allowed, free rhyme (the B in ABA) */
+    generate_line(&h->lines[1], target_syl[1], tlang, glang, &ghost_used, -1);
+
+    /* record line 2 ending word (this becomes the chain target for next haiku) */
+    int end_word_1 = -1;
+    if (h->lines[1].count > 0)
+        end_word_1 = h->lines[1].words[h->lines[1].count - 1];
 
     float dest_after_l2[DESTINY_DIM];
     memcpy(dest_after_l2, org.destiny, sizeof(dest_after_l2));
@@ -2083,10 +2317,13 @@ static void generate_haiku(Haiku *h) {
         org.destiny[d] = 0.5f * dest_after_l1[d] + 0.5f * dest_after_l2[d];
     vec_normalize(org.destiny, DESTINY_DIM);
 
-    /* line 3: pure target language */
-    generate_line(&h->lines[2], target_syl[2], tlang, -1, NULL);
+    /* line 3: rhyme with line 1 ending (the A in ABA) */
+    generate_line(&h->lines[2], target_syl[2], tlang, -1, NULL, end_word_0);
 
     memcpy(h->destiny_after, org.destiny, sizeof(h->destiny_after));
+
+    /* update terza rima chain: store line 2 ending for next haiku */
+    org.prev_middle_end = end_word_1;
 
     /* enjambment check: if julia > 0.3, mark for carry */
     h->has_enjamb = (org.julia > 0.3f) ? 1 : 0;
@@ -2125,6 +2362,10 @@ static int haiku_to_string(const Haiku *h, char *buf, int bufsize) {
 }
 
 static void print_haiku_colored(const Haiku *h) {
+    /* Find line-ending words for rhyme detection */
+    int end0 = (h->lines[0].count > 0) ? h->lines[0].words[h->lines[0].count - 1] : -1;
+    int end2 = (h->lines[2].count > 0) ? h->lines[2].words[h->lines[2].count - 1] : -1;
+
     for (int ln = 0; ln < 3; ln++) {
         const Line *line = &h->lines[ln];
         printf("  ");
@@ -2132,7 +2373,18 @@ static void print_haiku_colored(const Haiku *h) {
             if (w > 0) printf(" ");
             int idx = line->words[w];
             int emo = vocab[idx].emotion;
-            printf("%s%s%s", emo_color[emo], vocab[idx].text, ANSI_RESET);
+            /* Bold the last word if it's part of a rhyme pair (terza rima) */
+            int is_rhyme_word = 0;
+            if (w == line->count - 1) {
+                if (ln == 2 && end0 >= 0 && end2 >= 0 && words_rhyme(end0, end2))
+                    is_rhyme_word = 1;
+                if (ln == 0 && end0 >= 0 && end2 >= 0 && words_rhyme(end0, end2))
+                    is_rhyme_word = 1;
+            }
+            if (is_rhyme_word)
+                printf("%s%s%s%s", ANSI_BOLD, emo_color[emo], vocab[idx].text, ANSI_RESET);
+            else
+                printf("%s%s%s", emo_color[emo], vocab[idx].text, ANSI_RESET);
         }
         if (ln == 2 && h->has_enjamb) {
             printf(" %s--%s", ANSI_DIM, ANSI_RESET);
@@ -2489,8 +2741,8 @@ static void print_banner(void) {
     printf("  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   \n");
     printf("%s\n", ANSI_RESET);
     printf("  %sa poetic organism%s\n", ANSI_DIM, ANSI_RESET);
-    printf("  %svocab: %d words · %d languages · chambers: %d · emotions: %d%s\n",
-           ANSI_DIM, vocab_size, LANG_COUNT, CH_COUNT, EMO_COUNT, ANSI_RESET);
+    printf("  %svocab: %d words · %d languages · %d rhyme classes · chambers: %d · emotions: %d%s\n",
+           ANSI_DIM, vocab_size, LANG_COUNT, rhyme_class_count, CH_COUNT, EMO_COUNT, ANSI_RESET);
     printf("  %scorpus: %d lines · %d bigrams · %d hebbian · parliament: %d experts%s\n",
            ANSI_DIM, corpus_total_lines, corpus_bg.count, corpus_hb.count,
            parliament_alive_count(&org.parliament), ANSI_RESET);
@@ -2560,6 +2812,7 @@ static void repl(void) {
             printf("  prophecy     show current prophecies\n");
             printf("  parliament   show DOE expert parliament\n");
             printf("  doe          (alias for parliament)\n");
+            printf("  rhyme <word> show rhyme class for a word\n");
             printf("  N            generate N cycles\n");
             printf("  q/quit       exit\n");
             continue;
@@ -2679,6 +2932,40 @@ static void repl(void) {
             continue;
         }
 
+        if (strncmp(input, "rhyme ", 6) == 0 || strcmp(input, "rhyme") == 0) {
+            if (len <= 6) {
+                printf("  %srhyme <word> — show rhyme class for a word%s\n",
+                       ANSI_DIM, ANSI_RESET);
+                printf("  %s%d rhyme classes from %d words%s\n",
+                       ANSI_DIM, rhyme_class_count, vocab_size, ANSI_RESET);
+                continue;
+            }
+            const char *query = input + 6;
+            int found = find_vocab_word(query);
+            if (found < 0) {
+                printf("  %s\"%s\" not in vocab%s\n", ANSI_DIM, query, ANSI_RESET);
+                continue;
+            }
+            char tail[32];
+            extract_rhyme_tail(vocab[found].text, tail, (int)sizeof(tail));
+            int cls = word_rhyme_class[found];
+            printf("  %s\"%s\" → tail \"%s\" (class %d)%s\n",
+                   ANSI_DIM, vocab[found].text, tail, cls, ANSI_RESET);
+            if (cls >= 0 && cls < MAX_RHYME_CLASSES) {
+                RhymeClass *rc = &rhyme_classes[cls];
+                printf("  %srhymes with (%d):%s", ANSI_DIM, rc->count, ANSI_RESET);
+                int shown = 0;
+                for (int ri = 0; ri < rc->count && shown < 20; ri++) {
+                    if (rc->members[ri] == found) continue;
+                    printf(" %s", vocab[rc->members[ri]].text);
+                    shown++;
+                }
+                if (shown == 0) printf(" %s(none)%s", ANSI_DIM, ANSI_RESET);
+                printf("\n");
+            }
+            continue;
+        }
+
         /* try to parse as number of cycles */
         int n = atoi(input);
         if (n > 0 && n <= 100) {
@@ -2721,6 +3008,7 @@ static const char *html_template_head =
     ".trauma{color:#c44;}.joy{color:#cc8;}.grief{color:#68c;}"
     ".resonance{color:#6cc;}.desire{color:#c6c;}.void{color:#666;}"
     ".rage{color:#e66;}.tenderness{color:#6a6;}.julia{color:#c8f;}"
+    ".rhyme{font-weight:bold;text-decoration:underline;text-underline-offset:3px;}"
     ".meta{color:#444;font-size:11px;margin-top:40px;}"
     ".dash{color:#555;}"
     "a{color:#555;text-decoration:none;border-bottom:1px solid #333;}"
@@ -2740,6 +3028,11 @@ static const char *emo_class[EMO_COUNT] = {
 
 static int haiku_to_html(const Haiku *h, char *buf, int bufsize) {
     int pos = 0;
+    /* Detect rhyming end words for visual marking */
+    int end0 = (h->lines[0].count > 0) ? h->lines[0].words[h->lines[0].count - 1] : -1;
+    int end2 = (h->lines[2].count > 0) ? h->lines[2].words[h->lines[2].count - 1] : -1;
+    int has_rhyme = (end0 >= 0 && end2 >= 0 && words_rhyme(end0, end2));
+
     pos += snprintf(buf + pos, (size_t)(bufsize - pos), "<div class='haiku'>");
     for (int ln = 0; ln < 3; ln++) {
         const Line *line = &h->lines[ln];
@@ -2748,9 +3041,13 @@ static int haiku_to_html(const Haiku *h, char *buf, int bufsize) {
             if (w > 0) pos += snprintf(buf + pos, (size_t)(bufsize - pos), " ");
             int idx = line->words[w];
             int emo = vocab[idx].emotion;
+            /* Mark last word of lines 1 and 3 if they rhyme */
+            int is_rhyme_end = (has_rhyme && w == line->count - 1 && (ln == 0 || ln == 2));
             pos += snprintf(buf + pos, (size_t)(bufsize - pos),
-                           "<span class='%s'>%s</span>",
-                           emo_class[emo], vocab[idx].text);
+                           "<span class='%s%s'>%s</span>",
+                           emo_class[emo],
+                           is_rhyme_end ? " rhyme" : "",
+                           vocab[idx].text);
         }
         if (ln == 2 && h->has_enjamb) {
             pos += snprintf(buf + pos, (size_t)(bufsize - pos),
@@ -2869,6 +3166,7 @@ static void web_serve(void) {
 int main(int argc, char **argv) {
     rng_seed((unsigned long)time(NULL));
     load_vocabulary();
+    build_rhyme_table();
     load_all_corpora();
     organism_init();
 
