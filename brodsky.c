@@ -662,13 +662,18 @@ static void build_rhyme_table(void) {
     }
 }
 
-/* Check if two words rhyme (same rhyme class, not same word) */
+/* Check if two words rhyme (same rhyme tail, not just same hash bucket) */
 static int words_rhyme(int a, int b) {
     if (a < 0 || b < 0 || a == b) return 0;
     if (word_rhyme_class[a] < 0 || word_rhyme_class[b] < 0) return 0;
     /* rhyme only within same language — cross-language fingerprints are noise */
     if (vocab[a].lang != vocab[b].lang) return 0;
-    return word_rhyme_class[a] == word_rhyme_class[b];
+    /* same hash bucket is necessary but not sufficient — verify tails match */
+    if (word_rhyme_class[a] != word_rhyme_class[b]) return 0;
+    char ta[32], tb[32];
+    extract_rhyme_tail(vocab[a].text, ta, (int)sizeof(ta));
+    extract_rhyme_tail(vocab[b].text, tb, (int)sizeof(tb));
+    return strcmp(ta, tb) == 0;
 }
 
 /* Fallback: do the last characters match? (weaker rhyme) */
@@ -2495,9 +2500,17 @@ static int sample_word(int syl_remaining, int force_max_syl,
     int   candidates[MAX_VOCAB];
     int   n_cand = 0;
 
-    /* gather candidates that fit syllable budget */
+    /* gather candidates that fit syllable budget.
+     * When rhyme_target is set, allow +1 syllable overflow for rhyming words —
+     * a 6-syllable line that rhymes is better than a 5-syllable line that doesn't. */
     for (int i = 0; i < vocab_size; i++) {
-        if (vocab[i].syllables > syl_remaining) continue;
+        int max_syl = syl_remaining;
+        if (rhyme_target >= 0 && vocab[i].syllables == syl_remaining + 1) {
+            /* allow +1 overflow only if this word actually rhymes */
+            if (words_rhyme(i, rhyme_target) || words_near_rhyme(i, rhyme_target))
+                max_syl = syl_remaining + 1;
+        }
+        if (vocab[i].syllables > max_syl) continue;
         if (is_used(i)) continue;
         candidates[n_cand] = i;
         logits[n_cand] = score_word(i);
@@ -2604,7 +2617,7 @@ static int sample_word(int syl_remaining, int force_max_syl,
      *
      * This gives reliable ABA within a stanza, with occasional breaks
      * that feel intentional, not accidental. */
-    if (rhyme_target >= 0 && rng_float() > 0.15f) {
+    if (rhyme_target >= 0 && rng_float() > 0.08f) {
         /* count rhyming candidates */
         int n_rhyme = 0;
         for (int i = 0; i < n_cand; i++) {
@@ -2685,7 +2698,7 @@ static void generate_line(Line *line, int target_syl,
         int force = (remaining <= 2) ? 1 : 0;
         /* Apply rhyme_target only when placing what is likely the last word
          * (remaining syllables <= 3). Earlier words generate freely. */
-        int rt = (remaining <= 3 && rhyme_target >= 0) ? rhyme_target : -1;
+        int rt = (remaining <= 5 && rhyme_target >= 0) ? rhyme_target : -1;
         int idx = sample_word(remaining, force, target_lang, ghost_lang, ghost_used, rt);
         if (idx < 0) break;
 
