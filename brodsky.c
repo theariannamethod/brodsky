@@ -2422,50 +2422,116 @@ typedef struct {
  * ghost_used:   pointer to ghost tracking flag
  * rhyme_target: if >= 0, last word of line should rhyme with vocab[rhyme_target]
  */
+/* Place a word into a line, updating all organism state */
+static void line_place_word(Line *line, int idx) {
+    line->words[line->count++] = idx;
+    line->syllables += vocab[idx].syllables;
+    org.acc_mass += vocab[idx].mass;
+
+    if (org.last_word >= 0) {
+        hebbian_record(org.last_word, idx);
+        corpus_bg_add(org.last_word, idx, CORPUS_ONLINE_DECAY);
+        corpus_hb_add(org.last_word, idx, CORPUS_ONLINE_DECAY);
+        tension_used(org.last_word, idx);
+    }
+
+    prophecy_update(&org.prophecy, idx);
+    int pred = corpus_best_bigram(idx);
+    if (pred >= 0) prophecy_add(&org.prophecy, pred, 0.5f);
+
+    org.last_emotion = vocab[idx].emotion;
+    org.prev_was_adj = vocab[idx].is_adjective;
+    org.last_word = idx;
+    mark_used(idx);
+    parliament_update(idx);
+}
+
+/* Pre-select a rhyming end-word before generating the rest of the line.
+ * Returns word index or -1 if no suitable rhyme found. */
+static int pick_rhyme_word(int rhyme_target, int max_syl, int target_lang) {
+    if (rhyme_target < 0) return -1;
+
+    /* collect all rhyming candidates that fit syllable budget */
+    int cands[256];
+    float scores[256];
+    int n = 0;
+
+    for (int i = 0; i < vocab_size && n < 256; i++) {
+        if (vocab[i].syllables > max_syl) continue;
+        if (vocab[i].syllables < 1) continue;
+        if (is_used(i)) continue;
+        if (vocab[i].lang != target_lang) continue;
+        if (i == rhyme_target) continue;
+        if (!words_rhyme(i, rhyme_target) && !words_near_rhyme(i, rhyme_target)) continue;
+        cands[n] = i;
+        scores[n] = score_word(i);
+        n++;
+    }
+    if (n == 0) return -1;
+
+    /* weighted random selection from rhyming candidates */
+    float sum = 0;
+    for (int i = 0; i < n; i++) sum += scores[i];
+    if (sum < 1e-10f) return cands[0];
+
+    float r = rng_float() * sum;
+    float acc = 0;
+    for (int i = 0; i < n; i++) {
+        acc += scores[i];
+        if (acc >= r) return cands[i];
+    }
+    return cands[n - 1];
+}
+
 static void generate_line(Line *line, int target_syl,
                           int target_lang, int ghost_lang, int *ghost_used,
                           int rhyme_target) {
     line->count = 0;
     line->syllables = 0;
 
-    while (line->syllables < target_syl && line->count < MAX_LINE_WORDS) {
-        int remaining = target_syl - line->syllables;
-        /* if only 1-2 syllables left, try to force exact match */
-        int force = (remaining <= 2) ? 1 : 0;
-        /* Apply rhyme_target only when placing what is likely the last word
-         * (remaining syllables <= 3). Earlier words generate freely. */
-        int rt = (remaining <= 5 && rhyme_target >= 0) ? rhyme_target : -1;
-        int idx = sample_word(remaining, force, target_lang, ghost_lang, ghost_used, rt);
-        if (idx < 0) break;
+    /*
+     * RHYME-FIRST strategy: if we need to rhyme, pick the end-word first
+     * and reserve its syllables. Then fill the line up to the budget.
+     * This dramatically improves hit rate — the rhyme word is guaranteed
+     * to fit, and the rest of the line wraps around it.
+     */
+    int reserved_end = -1;
+    int fill_budget = target_syl;
 
-        line->words[line->count++] = idx;
-        line->syllables += vocab[idx].syllables;
-        org.acc_mass += vocab[idx].mass;
-
-        /* update state */
-        if (org.last_word >= 0) {
-            hebbian_record(org.last_word, idx);
-            /* online corpus learning: reinforce generated bigrams & hebbian */
-            corpus_bg_add(org.last_word, idx, CORPUS_ONLINE_DECAY);
-            corpus_hb_add(org.last_word, idx, CORPUS_ONLINE_DECAY);
+    if (rhyme_target >= 0 && rng_float() > 0.08f) {
+        /* try to find a rhyming word that leaves room for at least 1 more word */
+        int max_rhyme_syl = target_syl - 1;  /* leave at least 1 syllable for prefix */
+        if (max_rhyme_syl < 1) max_rhyme_syl = target_syl; /* if target_syl is 1-2, use all */
+        reserved_end = pick_rhyme_word(rhyme_target, max_rhyme_syl, target_lang);
+        if (reserved_end >= 0) {
+            fill_budget = target_syl - vocab[reserved_end].syllables;
+            mark_used(reserved_end);  /* prevent it from appearing in fill */
         }
-        /* track tension pair usage — lifecycle decay */
-        if (org.last_word >= 0)
-            tension_used(org.last_word, idx);
+    }
 
-        /* prophecy: check fulfillment, age, add new prediction */
-        prophecy_update(&org.prophecy, idx);
-        /* predict next from corpus bigrams */
-        int pred = corpus_best_bigram(idx);
-        if (pred >= 0) prophecy_add(&org.prophecy, pred, 0.5f);
+    /* fill the line up to fill_budget */
+    while (line->syllables < fill_budget && line->count < MAX_LINE_WORDS - 1) {
+        int remaining = fill_budget - line->syllables;
+        int force = (remaining <= 2) ? 1 : 0;
+        int idx = sample_word(remaining, force, target_lang, ghost_lang, ghost_used, -1);
+        if (idx < 0) break;
+        line_place_word(line, idx);
+    }
 
-        org.last_emotion = vocab[idx].emotion;
-        org.prev_was_adj = vocab[idx].is_adjective;
-        org.last_word = idx;
-        mark_used(idx);
+    /* place the reserved rhyme word at the end */
+    if (reserved_end >= 0 && line->count < MAX_LINE_WORDS) {
+        line_place_word(line, reserved_end);
+    }
 
-        /* parliament: update expert vitality after each word election */
-        parliament_update(idx);
+    /* if no reserved end, fill remaining freely (old behavior for non-rhyme lines) */
+    if (reserved_end < 0) {
+        while (line->syllables < target_syl && line->count < MAX_LINE_WORDS) {
+            int remaining = target_syl - line->syllables;
+            int force = (remaining <= 2) ? 1 : 0;
+            int idx = sample_word(remaining, force, target_lang, ghost_lang, ghost_used, -1);
+            if (idx < 0) break;
+            line_place_word(line, idx);
+        }
     }
 }
 
