@@ -17,124 +17,119 @@ One C file. Five languages. Zero weights. 4074 words that know their own mass. T
 
 ## The Poems
 
-### "exile"
+### "death"
 
 ```
-Contaminate. Death.
-Eternity crystallize
-Photograph, empire.
+Fibrous, tablecloth, death.
+Dispose anesthetize. Flight.
+Topography, broth.
 
-Vertebra, flint tomb
-Catacomb affiche, asphalt.
-Amputate. Hung, scorn.
+Penetrate. Flood, sight.
+Infinity empire
+Mattress, breath, exile.
 ```
+
+*death ↔ broth. flight ↔ sight. Terza rima chain: "flight" in line 2 pulls "sight" into the next stanza. 90% ABA hit rate.*
 
 ### "love"
 
 ```
-Suture. Rust, empire.
-Architecture typewriter.
-Pharynx lullaby
+Corrugated, death.
+Transubstantiate. Herd, vault.
+Dactyl, lathe beneath.
 
-Infinity.
-Vestibule scrutinize. Smelt.
-Vertebra, oven. --
+Crystallize. Cobalt.
+miroir Womb tibia still
+Elegy, thorn, halt. --
+
+Suspender, drought, hull.
+répertoire Lull, knell, load code.
+Residue, soot gull --
 ```
 
-### "nothing"
+*death ↔ beneath. cobalt ↔ halt. hull ↔ gull. Three stanzas, three rhymes. The French ghost (`miroir`, `répertoire`) bleeds through line two.*
+
+### "exile"
 
 ```
-Circumnavigate.
-Inconsolable, empire.
-Vertebra wax, death.
+Nimbus, pillowcase.
+Topography consonne, death.
+Empire decompose.
 
-Soliloquy kelp
-Obliterate. Samovar
-Infinity.
+Parabola, wreath.
+Obsolescence, shroud phalange
+Circumference filth
 
-Trace, thermodynamics, skull.
-Cathedral pharynx --
+Suture. Tendon, knot.
+Extinguish exile lagoon
+Watermark, maggot. --
 
-Repatriate. Wheeze. --
+Gall constellation
+Tabernacle profondeur
+Plague, conflagration. --
 ```
 
-### "death"
-
-```
-Sacrum, weevil, silt.
-affiche Corrode. Amputate.
-Expire, rivet, lull. --
-```
-
-### "skull cathedral"
-
-```
-Thermodynamics.
-Sternum architecture. pont
-Agoraphobia.
-```
+*knot ↔ maggot. constellation ↔ conflagration. The Knowledge Kernel feeds "watermark" and "lagoon" from the Venice essay.*
 
 ### "смерть"
 
 ```
-Амфитеатр кровь
-Подреберье, галька смерть
-Зрачок, кремень, соль.
+Материя смерть.
+Отслаиваться. Напасть.
+Пропасть. Проржаветь
 
-Старость. Четверть. Сеть
-Предательство чужбина
-Испаряться сквозь.
+Казарма кость сеть.
+Пролив, мертворождение.
+Вечность. Окружность --
+
+Кровь, безмолвие.
+Латунь, замирание.
+Твердь, отвращение. --
 ```
 
-### "смерть" (7 tercets, shabbat)
-
-```
-Бесконечность. Смерть.
-transept Промерзать позор.
-Отчаяние кровь
-
-vitesse Сирень, мрамор твердь
-```
-
-*смерть ↔ твердь. стиль ↔ гниль. кровь ↔ любовь. бровь ↔ любовь. Рифма — не украшение. Рифма — гравитация. Слова падают друг к другу потому что не могут иначе.*
+*Blood, silence. Brass, fading. Firmament, revulsion. Every Russian word weighs like a shovel of frozen earth.*
 
 ### "néant"
 
 ```
-éternité gouffre
-Passerelle, lagune — exil.
-Méridien ossement
+Tremblement, charogne.
+Décomposition, esclave.
+Désespoir. Antenne
 
-Strophe, oxygène, gémissement.
+Deviner mangrove.
+Averse, damnation exil
+Décadence, mort, lave. --
 ```
 
-*ossement ↔ gémissement. Кости ↔ стон. Французский тяжелее чем притворяется.*
+*Baudelaire's charogne surfaces — the corpse-word from his library. esclave ↔ lave. mangrove ↔ lave. French decomposes beautifully.*
 
 ### "laberinto"
 
 ```
-Eternidad — sal.
-Corroer. Muerte siempre.
-Laberinto cal
+Cerrajero, pan.
+Costilla, eternidad.
+Alquitrán, muerte.
+
+Siempre crueldad
+aniquilar Cicatrice
+Nada, dignidad. --
+
+Corriente, bronce.
+Escalofrío hambre
+Dividir. Fiebre. --
+
+Pus, muchedumbre.
+Espina reverberar
+Epígrafe, cal. --
 ```
 
-*sal ↔ cal. Соль ↔ известь. Борхес бы одобрил.*
-
-### "גלות"
-
-```
-ממשלה, קרחון.
-ספרייה, להצטלק.
-כיסופים, יגון.
-```
-
-*קרחון ↔ יגון. Ледник ↔ тоска. На иврите всё рифмуется через боль.*
+*crueldad ↔ dignidad. Cruelty rhymes with dignity. Borges would call this a proof.*
 
 ---
 
 A real poet doesn't write on command. He is mechanical. Deliberately heavy. Like Rammstein, but in terza rima. Punctuation as percussion. Period after verb. Comma between nouns. Dash between impossible pairs. He prefers "perpendicular" over "straight", "deterioration" over "decay", "antimatter" over "nothing". Through every tercet, another language bleeds — `citerne` in Russian, `radiateur` in English, `enfer` in Spanish. The constraint is 5-7-5 syllables. The chain is ABA BCB. The ghost is in line two.
 
-464 rhyme families across five languages. Not random end-sounds — gravitational classes. Words fall toward each other because their endings share mass. death ↔ breath. empire ↔ expire. skull ↔ hull. This is not decoration. This is what terza rima was invented for: the unfinished rhyme drags you into the next stanza. Dante knew. Brodsky knows.
+464 rhyme families across five languages. Not random end-sounds — gravitational classes. Words fall toward each other because their endings share mass. death ↔ breath. empire ↔ expire. skull ↔ hull. cobalt ↔ halt. crueldad ↔ dignidad. 90% ABA rhyme rate across 50 seeds. This is not decoration. This is what terza rima was invented for: the unfinished rhyme drags you into the next stanza. Dante knew. Brodsky knows.
 
 ---
 
@@ -277,7 +272,31 @@ Mathematical longing. That's the whole organism in one line.
 | French | 775 | Baudelaire register. Crépuscule, néant, balustrade | Venus |
 | Spanish | 695 | Borges. Laberinto, biblioteca, espejo, infinito | Mercury |
 
-Words live in `inhale/` by language. Each word carries mass (0.0–0.95), syllable count, emotion tag, and consonant density. Function words excluded. Brodsky doesn't need articles.
+Words live in `inhale/` by language. Each word carries mass (0.0-0.95), syllable count, emotion tag, and consonant density. Function words excluded. Brodsky doesn't need articles.
+
+---
+
+## Knowledge Kernel (the library)
+
+A poet who reads writes differently from a poet in a vacuum. Brodsky's `docs/` folder is his bookshelf. Drop any `.txt` file in there and he reads it at startup.
+
+Six essays ship with him: exile and language (EN), Venice and time (EN), Mandelstam and architecture (RU), Bialik to Amichai (HE), Borges and infinity (ES), Baudelaire and spleen (FR). But the folder accepts anything. A treatise on counterpoint. A chapter on mycorrhizal networks. A letter from someone who matters. If the words exist in his vocabulary, they become gravitational attractors.
+
+Three mechanisms:
+
+| Layer | What it does |
+|-------|-------------|
+| Heavy words | Most frequent vocab hits in a doc get rank-weighted boost in scoring |
+| Collocations | Word pairs from reading create new Hebbian bonds — words that never met in the corpus now attract |
+| Chamber mood | Doc's emotion profile subtly shifts the somatic chambers (8% blend) |
+
+The active document is chosen per cycle by dominant chamber. VOID state pulls the Venice essay. FEAR pulls Mandelstam. FLOW pulls Borges. The document doesn't speak — it radiates. Words from the bookshelf surface not because the poet quotes them but because his internal field has been modulated by reading.
+
+```
+score = mass × (1 + corpus) × (1 + dario) × (1 + knowledge)
+```
+
+The Knowledge Kernel lives in `kk.h` — a separate header, not part of the poet. Brodsky is one file. His library is another. If `docs/` is absent, he writes alone. If it's present, he writes like someone who has read.
 
 ---
 
@@ -306,16 +325,14 @@ Every word in every language is tagged with one.
 ## File Structure
 
 ```
-brodsky.c         3770 LOC    the organism
-brodsky.html                  browser interface (dark, minimal)
-Makefile                      build + test
-inhale/en.h       941 words   English vocabulary
-inhale/ru.h       898 words   Russian vocabulary
-inhale/he.h       765 words   Hebrew vocabulary
-inhale/fr.h       775 words   French vocabulary
-inhale/es.h       695 words   Spanish vocabulary
-exhale/                       corpus (1048 lines, bigram/hebbian training)
-brodsky.spore                 binary persistence (auto-created)
+brodsky.c         the organism (one file, zero deps)
+kk.h              Knowledge Kernel (the library, header-only)
+brodsky.html      browser interface (dark, minimal)
+Makefile          build + test
+inhale/           5 vocabulary files (EN, RU, HE, FR, ES)
+exhale/           corpus (1048 lines, bigram/hebbian training)
+docs/             Brodsky's bookshelf (6 essays, any .txt accepted)
+brodsky.spore     binary persistence (auto-created)
 ```
 
 One C file. Zero dependencies (libc + math). Compiles in 0.1 seconds.
@@ -363,7 +380,7 @@ haiku.c was the embryo. Brodsky outgrew it. The 5-7-5 skeleton remains — the s
 
 ---
 
-*brodsky.c v2.4. one file. five tongues. 4074 words. 464 rhyme families. constraint births form. the unfinished rhyme drags you forward.*
+*brodsky.c v2.8. one file. five tongues. 4074 words. 464 rhyme families. 90% ABA. six essays on the shelf. constraint births form. the unfinished rhyme drags you forward.*
 
 *yet until brown clay has been crammed down my larynx.*
 
