@@ -838,4 +838,99 @@ W("plume",            0.35, 1, EMO_JULIA), \
 W("amertume",         0.55, 3, EMO_GRIEF), \
 W("coutume",          0.40, 2, EMO_VOID), \
 W("volume",           0.40, 2, EMO_VOID), \
+/* === RIMBAUD — RENFORT DE RIMES === */ \
+/* -il rhymes (strengthen exil class) */ \
+W("pistil",           0.40, 2, EMO_RESONANCE), \
+W("subtil",           0.45, 2, EMO_RESONANCE), \
+W("chenil",           0.40, 2, EMO_VOID), \
+W("coutil",           0.35, 2, EMO_VOID), \
+W("babil",            0.35, 2, EMO_TENDERNESS), \
+W("nombril",          0.45, 2, EMO_TRAUMA), \
+W("terril",           0.50, 2, EMO_VOID), \
+/* -ant/-ment rhymes (strengthen néant class) */ \
+W("acharnement",      0.60, 3, EMO_RAGE), \
+W("effondrement",     0.65, 3, EMO_TRAUMA), \
+W("ensevelissement",  0.60, 5, EMO_VOID), \
+W("ébranlement",      0.55, 4, EMO_TRAUMA), \
+W("égarement",        0.50, 3, EMO_JULIA), \
+W("enchantement",     0.45, 3, EMO_RESONANCE), \
+W("engendrement",     0.50, 3, EMO_RESONANCE), \
+W("affolement",       0.55, 3, EMO_TRAUMA), \
+W("entêtement",       0.45, 3, EMO_RAGE), \
+/* -ne/-ène/-ane rhymes (strengthen crâne class) */ \
+W("profane",          0.45, 2, EMO_VOID), \
+W("arcane",           0.55, 2, EMO_RESONANCE), \
+W("phénomène",        0.50, 3, EMO_RESONANCE), \
+W("obscène",          0.55, 2, EMO_RAGE), \
+W("scène",            0.45, 1, EMO_VOID), \
+W("arène",            0.50, 2, EMO_RAGE), \
+W("migraine",         0.45, 2, EMO_TRAUMA), \
+/* -oir/-oire rhymes (strengthen miroir class) */ \
+W("réfectoire",       0.45, 3, EMO_VOID), \
+W("observatoire",     0.50, 5, EMO_RESONANCE), \
+W("interrogatoire",   0.55, 5, EMO_TRAUMA), \
+W("transitoire",      0.50, 4, EMO_VOID), \
+W("dérisoire",        0.50, 4, EMO_VOID), \
+W("exutoire",         0.45, 3, EMO_VOID), \
+W("crématoire",       0.60, 4, EMO_TRAUMA), \
+W("oratoire",         0.45, 4, EMO_VOID), \
+/* -eur/-eure rhymes (strengthen douleur class) */ \
+W("terreur",          0.70, 2, EMO_TRAUMA), \
+W("fureur",           0.65, 2, EMO_RAGE), \
+W("vapeur",           0.40, 2, EMO_VOID), \
+W("noirceur",         0.55, 2, EMO_VOID), \
+W("pesanteur",        0.50, 3, EMO_VOID), \
+W("épaisseur",        0.45, 3, EMO_VOID), \
+W("froideur",         0.50, 2, EMO_VOID), \
+W("ardeur",           0.55, 2, EMO_DESIRE), \
+W("lourdeur",         0.45, 2, EMO_VOID), \
+/* -ence/-ense rhymes (strengthen silence class) */ \
+W("pestilence",       0.60, 3, EMO_TRAUMA), \
+W("véhémence",        0.55, 3, EMO_RAGE), \
+W("clémence",         0.40, 2, EMO_TENDERNESS), \
+W("déférence",        0.40, 3, EMO_VOID), \
+W("turbulence",       0.50, 3, EMO_RAGE), \
+W("concupiscence",    0.55, 4, EMO_DESIRE), \
+W("réticence",        0.45, 3, EMO_VOID), \
+W("virulence",        0.55, 3, EMO_RAGE), \
+/* -ombe/-ombre rhymes (NEW class) */ \
+W("tombe",            0.70, 1, EMO_GRIEF), \
+W("ombre",            0.55, 1, EMO_VOID), \
+W("hécatombe",        0.70, 3, EMO_TRAUMA), \
+W("catacombes",       0.65, 3, EMO_VOID), \
+W("sombre",           0.55, 1, EMO_VOID), \
+W("succombe",         0.55, 2, EMO_TRAUMA), \
+/* -ive/-ève rhymes (NEW class) */ \
+W("dérive",           0.55, 2, EMO_JULIA), \
+W("grève",            0.50, 1, EMO_RAGE), \
+W("rive",             0.40, 1, EMO_JULIA), \
+W("épave",            0.50, 2, EMO_TRAUMA), \
+W("archive",          0.45, 2, EMO_VOID), \
+W("invective",        0.55, 3, EMO_RAGE), \
+W("perspective",      0.50, 3, EMO_RESONANCE), \
+W("fugitive",         0.50, 3, EMO_JULIA), \
+/* -ale rhymes (strengthen cathédrale class) */ \
+W("sépulcrale",       0.65, 3, EMO_GRIEF), \
+W("viscérale",        0.60, 3, EMO_TRAUMA), \
+W("spectrale",        0.55, 2, EMO_VOID), \
+W("sidérale",         0.50, 3, EMO_RESONANCE), \
+W("australe",         0.45, 2, EMO_VOID), \
+/* -ort rhymes (strengthen mort class) */ \
+W("réconfort",        0.45, 3, EMO_TENDERNESS), \
+W("tort",             0.50, 1, EMO_VOID), \
+W("essor",            0.40, 2, EMO_RESONANCE), \
+/* -ivre/-vre rhymes (Rimbaud: cuivre, ivre) */ \
+W("ivre",             0.55, 1, EMO_DESIRE), \
+W("cuivre",           0.45, 1, EMO_RESONANCE), \
+W("livre",            0.40, 1, EMO_RESONANCE), \
+W("délivre",          0.50, 2, EMO_RESONANCE), \
+/* -ose/-ase rhymes (chrysalide, metamorphosis) */ \
+W("chlorose",         0.50, 2, EMO_TRAUMA), \
+W("nécrose",          0.60, 2, EMO_TRAUMA), \
+W("ecchymose",        0.55, 3, EMO_TRAUMA), \
+W("apothéose",        0.55, 4, EMO_RESONANCE), \
+/* -asme/-isme rhymes (spleen, vision) */ \
+W("sarcasme",         0.55, 2, EMO_RAGE), \
+W("phantasme",        0.50, 2, EMO_DESIRE), \
+W("spasme",           0.55, 1, EMO_TRAUMA), \
 /* END */

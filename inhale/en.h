@@ -1026,4 +1026,98 @@ W("womb",            0.55, 1, EMO_TRAUMA), \
 W("tomb",            0.55, 1, EMO_GRIEF), \
 W("entomb",          0.55, 2, EMO_GRIEF), \
 W("catacomb",        0.55, 3, EMO_GRIEF), \
+/* === DICKINSON ADDITIONS — rhyme class reinforcement === */ \
+/* -eath family (death/beneath/breath/wreath) */ \
+W("sheath",          0.45, 1, EMO_VOID), \
+W("heath",           0.40, 1, EMO_VOID), \
+W("bequeath",        0.50, 2, EMO_GRIEF), \
+/* -ull family (skull/hull/lull/gull) */ \
+W("null",            0.40, 1, EMO_VOID), \
+W("dull",            0.30, 1, EMO_VOID), \
+W("cull",            0.35, 1, EMO_TRAUMA), \
+W("numskull",        0.40, 2, EMO_VOID), \
+/* -ile family (exile/bile/guile/reconcile/defile) */ \
+W("awhile",          0.35, 2, EMO_GRIEF), \
+W("beguile",         0.45, 2, EMO_DESIRE), \
+W("sterile",         0.50, 2, EMO_VOID), \
+W("hostile",         0.55, 2, EMO_RAGE), \
+W("futile",          0.50, 2, EMO_GRIEF), \
+W("domicile",        0.50, 3, EMO_JULIA), \
+W("textile",         0.40, 2, EMO_VOID), \
+W("projectile",      0.50, 3, EMO_TRAUMA), \
+/* -ity family (eternity/infinity/antiquity/nullity/opacity) */ \
+W("gravity",         0.60, 3, EMO_RESONANCE), \
+W("mortality",       0.70, 4, EMO_TRAUMA), \
+W("divinity",        0.60, 4, EMO_RESONANCE), \
+W("captivity",       0.55, 4, EMO_JULIA), \
+W("severity",        0.50, 4, EMO_RAGE), \
+W("obscurity",       0.55, 4, EMO_VOID), \
+W("immensity",       0.55, 4, EMO_RESONANCE), \
+W("posterity",       0.55, 4, EMO_VOID), \
+W("complicity",      0.50, 4, EMO_TRAUMA), \
+W("atrocity",        0.60, 4, EMO_TRAUMA), \
+W("velocity",        0.55, 4, EMO_RESONANCE), \
+W("extremity",       0.55, 4, EMO_TRAUMA), \
+/* -ire family (empire/fire/wire/expire/transpire/quagmire) */ \
+W("pyre",            0.55, 1, EMO_GRIEF), \
+W("spire",           0.50, 1, EMO_VOID), \
+W("conspire",        0.50, 2, EMO_RAGE), \
+W("desire",          0.55, 2, EMO_DESIRE), \
+W("admire",          0.40, 2, EMO_TENDERNESS), \
+/* -ust family (dust/rust/crust/trust/disgust/combust) */ \
+W("distrust",        0.50, 2, EMO_RAGE), \
+W("robust",          0.45, 2, EMO_VOID), \
+W("unjust",          0.55, 2, EMO_RAGE), \
+W("august",          0.45, 2, EMO_VOID), \
+W("locust",          0.40, 2, EMO_VOID), \
+/* -orn/-urn family (thorn/scorn/forlorn/stillborn/sworn) */ \
+W("mourn",           0.55, 1, EMO_GRIEF), \
+W("shorn",           0.40, 1, EMO_VOID), \
+W("worn",            0.40, 1, EMO_GRIEF), \
+W("torn",            0.45, 1, EMO_TRAUMA), \
+W("sojourn",         0.50, 2, EMO_JULIA), \
+W("acorn",           0.30, 2, EMO_VOID), \
+W("return",          0.45, 2, EMO_JULIA), \
+W("Saturn",          0.45, 2, EMO_RESONANCE), \
+/* -ight/-ite family (blight/night/sight/flight/plight) */ \
+W("twilight",        0.55, 2, EMO_VOID), \
+W("midnight",        0.55, 2, EMO_VOID), \
+W("birthright",      0.55, 2, EMO_TRAUMA), \
+W("parasite",        0.50, 3, EMO_TRAUMA), \
+W("ignite",          0.50, 2, EMO_TRAUMA), \
+W("contrite",        0.45, 2, EMO_GRIEF), \
+/* -one/-own family (bone/stone/throne/alone/disown/overthrown) */ \
+W("milestone",       0.45, 2, EMO_VOID), \
+W("tombstone",       0.60, 2, EMO_GRIEF), \
+W("cornerstone",     0.50, 3, EMO_VOID), \
+W("cyclone",         0.45, 2, EMO_TRAUMA), \
+W("unknown",         0.50, 2, EMO_VOID), \
+/* -old family (threshold/scaffold) */ \
+W("manifold",        0.50, 3, EMO_RESONANCE), \
+W("behold",          0.45, 2, EMO_RESONANCE), \
+W("household",       0.40, 3, EMO_JULIA), \
+W("stronghold",      0.50, 2, EMO_VOID), \
+W("withhold",        0.45, 2, EMO_VOID), \
+/* -ade family (facade/balustrade/colonnade) */ \
+W("tirade",          0.45, 2, EMO_RAGE), \
+W("crusade",         0.55, 2, EMO_VOID), \
+W("barricade",       0.50, 3, EMO_RAGE), \
+W("promenade",       0.45, 3, EMO_JULIA), \
+W("masquerade",      0.50, 3, EMO_VOID), \
+W("serenade",        0.40, 3, EMO_DESIRE), \
+/* -ence/-ense family (circumference/indifference/obsolescence) */ \
+W("permanence",      0.50, 3, EMO_RESONANCE), \
+W("pestilence",      0.55, 3, EMO_TRAUMA), \
+W("penitence",       0.50, 3, EMO_GRIEF), \
+W("eloquence",       0.45, 3, EMO_RESONANCE), \
+W("turbulence",      0.50, 3, EMO_TRAUMA), \
+W("violence",        0.60, 3, EMO_RAGE), \
+W("diligence",       0.40, 3, EMO_VOID), \
+W("negligence",      0.50, 3, EMO_VOID), \
+W("magnificence",    0.55, 4, EMO_RESONANCE), \
+/* -ound family (new class) */ \
+W("ground",          0.40, 1, EMO_VOID), \
+W("wound",           0.50, 1, EMO_TRAUMA), \
+W("profound",        0.55, 2, EMO_RESONANCE), \
+W("burial-ground",   0.60, 3, EMO_GRIEF), \
 /* END */

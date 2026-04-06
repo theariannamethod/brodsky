@@ -831,4 +831,89 @@ W("neblina",          0.35, 3, EMO_VOID), \
 W("rutina",           0.35, 3, EMO_VOID), \
 W("espina",           0.40, 3, EMO_TRAUMA), \
 W("medicina",         0.40, 4, EMO_VOID), \
+/* === VALLEJO — HUESO Y HAMBRE, DOLOR PERUANO === */ \
+/* -ón/-ión rhymes: corazón, destrucción, prisión... */ \
+W("corazón",          0.80, 3, EMO_JULIA), \
+W("prisión",          0.70, 2, EMO_TRAUMA), \
+W("traición",         0.75, 2, EMO_RAGE), \
+W("perdón",           0.60, 2, EMO_TENDERNESS), \
+W("razón",            0.55, 2, EMO_RESONANCE), \
+W("pasión",           0.70, 2, EMO_DESIRE), \
+W("maldición",        0.75, 3, EMO_RAGE), \
+W("obsesión",         0.65, 3, EMO_TRAUMA), \
+W("compasión",        0.55, 3, EMO_TENDERNESS), \
+W("redención",        0.65, 3, EMO_RESONANCE), \
+W("demolición",       0.60, 4, EMO_TRAUMA), \
+W("fundición",        0.50, 3, EMO_VOID), \
+W("rendición",        0.60, 3, EMO_GRIEF), \
+W("abolición",        0.55, 4, EMO_VOID), \
+W("deformación",      0.60, 4, EMO_TRAUMA), \
+W("putrefacción",     0.65, 4, EMO_TRAUMA), \
+/* -ado/-ada rhymes: soldado, madrugada... */ \
+W("soldado",          0.55, 3, EMO_TRAUMA), \
+W("exiliado",         0.60, 4, EMO_JULIA), \
+W("descarnado",       0.55, 4, EMO_TRAUMA), \
+W("desolado",         0.60, 4, EMO_GRIEF), \
+W("empedrado",        0.40, 4, EMO_VOID), \
+W("alambrado",        0.50, 4, EMO_TRAUMA), \
+W("llamarada",        0.55, 4, EMO_RAGE), \
+W("emboscada",        0.50, 4, EMO_TRAUMA), \
+W("pedrada",          0.45, 3, EMO_RAGE), \
+W("alborada",         0.40, 4, EMO_JOY), \
+/* -ura rhymes: sepultura, amargura, oscura... */ \
+W("sepultura",        0.75, 4, EMO_GRIEF), \
+W("amargura",         0.70, 4, EMO_GRIEF), \
+W("locura",           0.65, 3, EMO_TRAUMA), \
+W("fisura",           0.50, 3, EMO_TRAUMA), \
+W("hendidura",        0.45, 4, EMO_TRAUMA), \
+W("rotura",           0.50, 3, EMO_TRAUMA), \
+W("tortura",          0.75, 3, EMO_TRAUMA), \
+W("mordedura",        0.55, 4, EMO_TRAUMA), \
+W("quemadura",        0.55, 4, EMO_TRAUMA), \
+W("desgarradura",     0.55, 5, EMO_TRAUMA), \
+/* -ento/-iento rhymes: tormento, sufrimiento... */ \
+W("tormento",         0.75, 3, EMO_TRAUMA), \
+W("sufrimiento",      0.70, 4, EMO_GRIEF), \
+W("aislamiento",      0.60, 4, EMO_JULIA), \
+W("pensamiento",      0.50, 4, EMO_RESONANCE), \
+W("firmamento",       0.55, 4, EMO_RESONANCE), \
+W("monumento",        0.50, 4, EMO_VOID), \
+W("juramento",        0.55, 4, EMO_RESONANCE), \
+W("pavimento",        0.40, 4, EMO_VOID), \
+W("hundimiento",      0.60, 4, EMO_TRAUMA), \
+/* -umbre/-ombre rhymes: servidumbre, pesadumbre... */ \
+W("servidumbre",      0.60, 4, EMO_GRIEF), \
+W("pesadumbre",       0.65, 4, EMO_GRIEF), \
+W("mansedumbre",      0.45, 4, EMO_TENDERNESS), \
+W("vislumbre",        0.40, 3, EMO_RESONANCE), \
+W("techumbre",        0.40, 3, EMO_VOID), \
+/* -aje rhymes: viaje, naufragio, linaje... */ \
+W("viaje",            0.50, 2, EMO_JULIA), \
+W("paisaje",          0.45, 3, EMO_JULIA), \
+W("linaje",           0.50, 3, EMO_RESONANCE), \
+W("ropaje",           0.35, 3, EMO_VOID), \
+W("vendaje",          0.40, 3, EMO_TRAUMA), \
+W("blindaje",         0.45, 3, EMO_VOID), \
+W("peregrinaje",      0.55, 5, EMO_JULIA), \
+W("herraje",          0.35, 3, EMO_VOID), \
+/* -anza/-encia rhymes: esperanza, venganza... */ \
+W("esperanza",        0.60, 4, EMO_RESONANCE), \
+W("venganza",         0.65, 3, EMO_RAGE), \
+W("matanza",          0.70, 3, EMO_TRAUMA), \
+W("lontananza",       0.50, 4, EMO_JULIA), \
+W("mudanza",          0.45, 3, EMO_JULIA), \
+W("tardanza",         0.40, 3, EMO_VOID), \
+/* -elo/-ielo rhymes: cielo, hielo, desvelo... */ \
+W("cielo",            0.55, 2, EMO_RESONANCE), \
+W("hielo",            0.50, 2, EMO_VOID), \
+W("desvelo",          0.55, 3, EMO_TRAUMA), \
+W("consuelo",         0.50, 3, EMO_TENDERNESS), \
+W("anhelo",           0.60, 3, EMO_DESIRE), \
+W("duelo",            0.65, 2, EMO_GRIEF), \
+W("flagelo",          0.60, 3, EMO_TRAUMA), \
+W("pañuelo",          0.30, 3, EMO_JULIA), \
+/* Vallejo additions: body-document, trilce */ \
+W("ataúd",            0.80, 3, EMO_GRIEF), \
+W("trilce",           0.70, 2, EMO_RESONANCE), \
+W("calvario",         0.65, 3, EMO_TRAUMA), \
 /* END */

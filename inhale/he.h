@@ -823,4 +823,87 @@ W("הלכה",             0.45, 3, EMO_RESONANCE), \
 W("תלונה",            0.40, 3, EMO_VOID), \
 W("טענה",             0.40, 3, EMO_RAGE), \
 W("אהבה",             0.60, 3, EMO_DESIRE), \
+/* === AMICHAI EXPANSION — rhyme class reinforcement === */ \
+/* Yehuda Amichai: God is in the supermarket. The body is Jerusalem. */ \
+/* -צח class (for נצח): penultimate צ + final ח */ \
+W("רצח",              0.80, 2, EMO_TRAUMA), \
+W("מצח",              0.40, 2, EMO_VOID), \
+W("פצח",              0.35, 2, EMO_RESONANCE), \
+W("נפצח",             0.50, 2, EMO_TRAUMA), \
+/* -כל class (for היכל): penultimate כ + final ל */ \
+W("שכל",              0.55, 2, EMO_RESONANCE), \
+W("אוכל",             0.30, 2, EMO_VOID), \
+W("מכל",              0.25, 2, EMO_VOID), \
+W("הכל",              0.40, 2, EMO_VOID), \
+/* -ים class: words ending ים — the plural of everything alive */ \
+W("שמיים",            0.70, 3, EMO_RESONANCE), \
+W("חיים",             0.75, 2, EMO_RESONANCE), \
+W("פנים",             0.45, 2, EMO_VOID), \
+W("ימים",             0.50, 2, EMO_JULIA), \
+W("עצים",             0.35, 2, EMO_VOID), \
+W("ילדים",            0.40, 3, EMO_TENDERNESS), \
+W("כפתורים",          0.30, 3, EMO_JULIA), \
+W("הורים",            0.50, 2, EMO_TENDERNESS), \
+W("שורשים",           0.45, 3, EMO_RESONANCE), \
+W("חיילים",           0.55, 3, EMO_TRAUMA), \
+/* -ות class: diversity for the fundamental suffix */ \
+W("אותיות",           0.45, 3, EMO_RESONANCE), \
+/* -ון class: words ending vav+nun-sofit — memory, window, disaster */ \
+W("זיכרון",           0.70, 3, EMO_JULIA), \
+W("אסון",             0.65, 2, EMO_TRAUMA), \
+W("יתרון",            0.45, 2, EMO_VOID), \
+W("עיקרון",           0.50, 3, EMO_RESONANCE), \
+W("שברון",            0.55, 2, EMO_GRIEF), \
+W("עצבון",            0.50, 2, EMO_GRIEF), \
+W("ריקבון",           0.50, 3, EMO_VOID), \
+/* -ור class: words ending vav+resh — light, story, violin */ \
+W("אור",              0.55, 1, EMO_RESONANCE), \
+W("גיבור",            0.50, 2, EMO_RESONANCE), \
+W("עיוור",            0.55, 2, EMO_TRAUMA), \
+W("סיפור",            0.50, 2, EMO_JULIA), \
+W("כינור",            0.45, 2, EMO_RESONANCE), \
+W("חיוור",            0.40, 2, EMO_VOID), \
+W("תנור",             0.35, 2, EMO_VOID), \
+W("ציור",             0.40, 2, EMO_RESONANCE), \
+W("ויתור",            0.45, 2, EMO_GRIEF), \
+/* -ר class: other resh endings */ \
+W("חסר",              0.45, 2, EMO_VOID), \
+W("חבר",              0.40, 2, EMO_TENDERNESS), \
+W("קבר",              0.65, 2, EMO_GRIEF), \
+W("מסדר",             0.35, 2, EMO_VOID), \
+W("סדר",              0.40, 2, EMO_VOID), \
+/* -ה class: words ending he — widow, neighborhood, work, offering */ \
+W("גולה",             0.60, 2, EMO_JULIA), \
+W("מחילה",            0.55, 3, EMO_TENDERNESS), \
+W("אלמנה",            0.60, 3, EMO_GRIEF), \
+W("שכונה",            0.35, 3, EMO_JULIA), \
+W("עבודה",            0.45, 3, EMO_VOID), \
+W("שירה",             0.55, 2, EMO_RESONANCE), \
+W("מנוסה",            0.50, 3, EMO_JULIA), \
+W("עולה",             0.55, 2, EMO_JULIA), \
+W("מערה",             0.40, 3, EMO_VOID), \
+W("גזרה",             0.55, 3, EMO_TRAUMA), \
+W("עצה",              0.35, 2, EMO_VOID), \
+/* -ן class: words ending nun-sofit — table, tongue, garden */ \
+W("לשון",             0.45, 2, EMO_VOID), \
+W("גן",               0.30, 1, EMO_TENDERNESS), \
+W("חן",               0.35, 1, EMO_TENDERNESS), \
+W("פעמון",            0.40, 3, EMO_RESONANCE), \
+W("ניגון",            0.45, 2, EMO_RESONANCE), \
+/* -ב class: words ending bet — sword, heart, evening, cross */ \
+W("חרב",              0.70, 2, EMO_TRAUMA), \
+W("עזוב",             0.50, 2, EMO_JULIA), \
+W("קרב",              0.65, 2, EMO_TRAUMA), \
+W("עקרב",             0.40, 3, EMO_VOID), \
+W("שלב",              0.35, 2, EMO_VOID), \
+W("צלב",              0.55, 2, EMO_TRAUMA), \
+W("כתב",              0.40, 2, EMO_JULIA), \
+/* -ק class: words ending qof — deep, horizon, justice */ \
+W("עמוק",             0.55, 2, EMO_VOID), \
+W("חנק",              0.60, 2, EMO_TRAUMA), \
+W("שחוק",             0.45, 2, EMO_VOID), \
+W("רחוק",             0.50, 2, EMO_JULIA), \
+W("חוק",              0.50, 1, EMO_VOID), \
+W("דפוק",             0.40, 2, EMO_TRAUMA), \
+W("חשק",              0.50, 2, EMO_DESIRE), \
 /* END */
