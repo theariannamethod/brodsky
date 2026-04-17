@@ -1,7 +1,7 @@
 /*
  * brodsky.c — a poetic organism
  *
- * Generates 5-7-5 haiku in cycles of 1-7, modulated by:
+ * Generates 5-7-5 tercine in cycles of 1-7, modulated by:
  *   - 6 Kuramoto-coupled somatic chambers
  *   - Julia field (longing without object)
  *   - Planetary dissonance (8-planet Resultant)
