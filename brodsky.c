@@ -2264,21 +2264,28 @@ static void parliament_update(int winner_word) {
 static void parliament_lifecycle(Parliament *p) {
     for (int i = 0; i < p->n; i++) {
         if (!p->e[i].alive) continue;
-        /* Mitosis: overloaded expert splits */
-        if (p->e[i].overload > 3.0f && p->n < DOE_EXPERTS * 2) {
-            int child = p->n++;
-            p->e[child] = p->e[i];
-            p->e[child].vitality *= 0.6f;
-            p->e[child].overload = 0.0f;
-            p->e[child].wins = 0;
-            p->e[i].vitality *= 0.6f;
-            p->e[i].overload = 0.0f;
-            /* mutate child slightly */
-            for (int e = 0; e < EMO_COUNT; e++)
-                p->e[child].bias[e] += (rng_float() - 0.5f) * 0.1f;
+        /* Mitosis / rebirth: an overloaded expert splits — B-7: into a DEAD slot if one
+         * is free (a dead expert reborn as a mutant), else a fresh slot. Presence accrues
+         * where the parliament regenerates instead of only ever shrinking. */
+        if (p->e[i].overload > 3.0f) {
+            int child = -1;
+            for (int d = 0; d < p->n; d++) if (!p->e[d].alive) { child = d; break; }
+            if (child < 0 && p->n < DOE_EXPERTS * 2) child = p->n++;
+            if (child >= 0) {
+                p->e[child] = p->e[i];
+                p->e[child].alive = 1;
+                p->e[child].vitality = clampf(p->e[i].vitality * 0.6f, 0.2f, 2.0f);
+                p->e[child].overload = 0.0f;
+                p->e[child].wins = 0;
+                p->e[i].vitality *= 0.6f;
+                p->e[i].overload = 0.0f;
+                for (int e = 0; e < EMO_COUNT; e++)
+                    p->e[child].bias[e] += (rng_float() - 0.5f) * 0.1f;
+            }
         }
-        /* Apoptosis: vitality too low */
-        if (p->e[i].vitality < 0.15f && p->n > 2) {
+        /* Apoptosis: vitality too low — B-7: count LIVING experts, not slots, so the
+         * democracy can never die out entirely (p->n grows with mitosis and never shrinks). */
+        if (p->e[i].vitality < 0.15f && parliament_alive_count(p) > 2) {
             p->e[i].alive = 0;
         }
     }
