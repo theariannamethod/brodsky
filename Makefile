@@ -13,4 +13,7 @@ clean:
 test: $(TARGET)
 	echo "exile" | ./$(TARGET) --seed 42
 
-.PHONY: all clean test
+test-tensions: $(TARGET)
+	./$(TARGET) --test-tensions
+
+.PHONY: all clean test test-tensions

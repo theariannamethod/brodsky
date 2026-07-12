@@ -57,6 +57,10 @@
 #define BIGRAM_SMOOTH   0.01f
 #define HEBBIAN_SLOTS   64
 #define TAU_BASE        1.2f
+#define TAU_COLD        0.40f   /* B-1 mixture: the committed voice (sharp — the word lands) */
+#define TAU_HOT         1.50f   /* B-1 mixture: the wandering voice (broad — the poet drifts) */
+
+static int g_user_seeded = 0;   /* B-3: --seed pins the life; the REPL must not reseed it */
 #define JULIA_STRETCH   2.0f
 #define WEB_PORT        3003
 #define MAX_CYCLE_HAIKU 7
@@ -485,10 +489,13 @@ static void load_raw_array(const RawWord *raw, int raw_count) {
         /* skip dead function words — Brodsky doesn't need articles */
         if (raw[r].mass < 0.10f) continue;
 
-        /* check for duplicate */
+        /* check for duplicate — B-5: within the SAME language only. cross-language
+         * homographs ("empire", "canal", "vector") are legal; the sampler already
+         * filters candidates by language, so a shared spelling must not let the senior
+         * language swallow the junior's word (and kill its native tension pairs). */
         int dup = 0;
         for (int i = 0; i < vocab_size; i++) {
-            if (strcmp(vocab[i].text, raw[r].text) == 0) { dup = 1; break; }
+            if (vocab[i].lang == raw[r].lang && strcmp(vocab[i].text, raw[r].text) == 0) { dup = 1; break; }
         }
         if (dup) continue;
 
@@ -1587,12 +1594,9 @@ static void organism_init(void) {
     org.cal_diss = calendar_dissonance();
     org.season = current_season();
 
-    /* seed destiny from time */
-    unsigned s = (unsigned)time(NULL);
-    for (int i = 0; i < DESTINY_DIM; i++) {
-        s = s * 1103515245 + 12345;
-        org.destiny[i] = ((float)(s & 0xFFFF) / 65535.0f) * 2.0f - 1.0f;
-    }
+    /* seed destiny from the organism's RNG so --seed reproduces it (B-3) */
+    for (int i = 0; i < DESTINY_DIM; i++)
+        org.destiny[i] = rng_float() * 2.0f - 1.0f;
     vec_normalize(org.destiny, DESTINY_DIM);
 
     hebbian_init();
@@ -2546,17 +2550,36 @@ static int sample_word(int syl_remaining, int force_max_syl,
         /* if n_rhyme < 1: not enough options, generate freely (graceful fallback) */
     }
 
-    /* softmax with temperature */
-    float max_l = -1e30f;
-    for (int i = 0; i < n_cand; i++)
-        if (logits[i] > max_l) max_l = logits[i];
-
+    /* B-1: a MIXTURE of two voices, not one temperature (Oleg). The scores above are
+     * MULTIPLICATIVE weights (a ×0.001 mass penalty, a 0.0 rhyme-kill); the old code
+     * fed them into expf((score-max)/tau) as if they were additive logits, turning
+     * "1000× rarer" into ~5× and "never" into ~exp(-max/tau). Instead, every word blends
+     * a COMMITTED draw (cold tau, sharp — the telling word lands) and a WANDERING draw
+     * (hot tau, broad — the poet drifts). Each regime is score^(1/tau) normalized, so a
+     * 0.0 is never and a ×0.001 is ~1000× rarer in BOTH. Both voices are always present;
+     * their ratio breathes with the body's tau (org.tau low → more commitment). */
+    float inv_cold = 1.0f / TAU_COLD, inv_hot = 1.0f / TAU_HOT;
+    float a_cold = 0.5f + (TAU_BASE - org.tau) * 0.4f;   /* centred (0.5 at base τ), breathes with the body */
+    if (a_cold < 0.15f) a_cold = 0.15f;   /* never all-hot: keep a spine */
+    if (a_cold > 0.85f) a_cold = 0.85f;   /* never all-cold: keep a breath */
+    double zc = 0.0, zh = 0.0;
+    for (int i = 0; i < n_cand; i++) {
+        float s = logits[i];
+        if (s > 0.0f) { zc += powf(s, inv_cold); zh += powf(s, inv_hot); }
+    }
+    if (zc < 1e-30) zc = 1.0;
+    if (zh < 1e-30) zh = 1.0;
     float sum = 0.0f;
     for (int i = 0; i < n_cand; i++) {
-        logits[i] = expf((logits[i] - max_l) / org.tau);
-        sum += logits[i];
+        float s = logits[i];
+        float w = s > 0.0f ? (float)(a_cold * (powf(s, inv_cold) / zc) + (1.0 - a_cold) * (powf(s, inv_hot) / zh)) : 0.0f;
+        logits[i] = w;
+        sum += w;
     }
-    if (sum < 1e-10f) sum = 1e-10f;
+    if (sum < 1e-10f) {                    /* every candidate killed → uniform fallback */
+        for (int i = 0; i < n_cand; i++) logits[i] = 1.0f;
+        sum = (float)n_cand;
+    }
 
     /* sample */
     float r = rng_float() * sum;
@@ -3814,7 +3837,7 @@ static void spore_load(const char *path) {
 /* Signal handler: save spore on Ctrl+C */
 static void on_exit_signal(int sig) {
     (void)sig;
-    spore_save(SPORE_PATH);
+    if (!g_user_seeded) spore_save(SPORE_PATH);
     printf("\n[brodsky] spore saved.\n");
     exit(0);
 }
@@ -3878,7 +3901,7 @@ static void repl(void) {
 
         if (!fgets(input, (int)sizeof(input), stdin)) {
             /* EOF — save spore before exiting */
-            spore_save(SPORE_PATH);
+            if (!g_user_seeded) spore_save(SPORE_PATH);
             printf("\n[brodsky] spore saved.\n");
             break;
         }
@@ -3891,14 +3914,14 @@ static void repl(void) {
         if (len == 0) {
             /* empty enter = generate one cycle */
             cycle_num++;
-            rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+            if (!g_user_seeded) rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
             generate_cycle(cycle_num, NULL, 0);
             continue;
         }
 
         if (strcmp(input, "q") == 0 || strcmp(input, "quit") == 0 ||
             strcmp(input, "exit") == 0) {
-            spore_save(SPORE_PATH);
+            if (!g_user_seeded) spore_save(SPORE_PATH);
             printf("\n  %s[brodsky] spore saved.%s\n", ANSI_DIM, ANSI_RESET);
             printf("\n  %s\"what gets left of a man amounts to a part.%s\n",
                    ANSI_DIM, ANSI_RESET);
@@ -4170,7 +4193,7 @@ static void repl(void) {
         if (n > 0 && n <= 100) {
             for (int i = 0; i < n; i++) {
                 cycle_num++;
-                rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+                if (!g_user_seeded) rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
                 generate_cycle(cycle_num, NULL, 0);
             }
             continue;
@@ -4355,7 +4378,7 @@ static void web_serve(void) {
 
         /* generate a cycle */
         cycle_num++;
-        rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+        if (!g_user_seeded) rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
         cycle_reset();
 
         char response[16384];
@@ -4408,29 +4431,58 @@ static void web_serve(void) {
 
 /* ─── MAIN ──────────────────────────────────────────────────────────── */
 
+/* B-5 repro: every tension pair's two words must live in vocab WITH the pair's own
+ * language. Before the dedup fix, cross-language homographs were swallowed by the
+ * senior language and the junior pairs went dead. `make test-tensions` runs this. */
+static int vocab_has(const char *text, int lang) {
+    for (int i = 0; i < vocab_size; i++)
+        if (vocab[i].lang == lang && strcmp(vocab[i].text, text) == 0) return 1;
+    return 0;
+}
+static int test_tensions(void) {
+    int n = 0, fails = 0;
+    for (int i = 0; tensions[i].a != NULL; i++) {   /* sentinel-terminated {NULL,...} */
+        n++;
+        int ha = vocab_has(tensions[i].a, tensions[i].lang);
+        int hb = vocab_has(tensions[i].b, tensions[i].lang);
+        if (!ha || !hb) {
+            fails++;
+            fprintf(stderr, "[FAIL] %s {%s%s, %s%s}\n", lang_names[tensions[i].lang],
+                    tensions[i].a, ha ? "" : "<missing>", tensions[i].b, hb ? "" : "<missing>");
+        }
+    }
+    fprintf(stderr, "test-tensions: %d pairs, %d failures\n", n, fails);
+    return fails;
+}
+
 int main(int argc, char **argv) {
-    rng_seed((unsigned long)time(NULL));
+    /* B-3: parse args BEFORE seeding and init, so --seed reproduces chambers & destiny */
+    int web_mode = 0, test_mode = 0;
+    unsigned long seed = (unsigned long)time(NULL);
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--web") == 0) web_mode = 1;
+        else if (strcmp(argv[i], "--test-tensions") == 0) test_mode = 1;
+        else if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
+            seed = strtoul(argv[++i], NULL, 10);
+            g_user_seeded = 1;
+        }
+    }
+    rng_seed(seed);
     load_vocabulary();
+    if (test_mode) return test_tensions() ? 1 : 0;
     build_rhyme_table();
     load_all_corpora();
     kk_load();
     organism_init();
 
-    /* load spore (persistence) after init — merges saved state */
-    spore_load(SPORE_PATH);
+    /* load spore (persistence) after init — merges saved state.
+     * B-3: a pinned --seed is a clean reproducible life; it neither loads nor saves. */
+    if (!g_user_seeded) spore_load(SPORE_PATH);
 
     /* install signal handler for clean exit */
 #if defined(__unix__) || defined(__APPLE__)
     signal(SIGINT, on_exit_signal);
 #endif
-
-    int web_mode = 0;
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--web") == 0) web_mode = 1;
-        else if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
-            rng_seed(strtoul(argv[++i], NULL, 10));
-        }
-    }
 
 #if defined(__unix__) || defined(__APPLE__)
     if (web_mode) {
