@@ -4,7 +4,7 @@ TARGET = brodsky
 
 all: $(TARGET)
 
-$(TARGET): brodsky.c inhale/en.h inhale/ru.h inhale/he.h inhale/fr.h inhale/es.h
+$(TARGET): brodsky.c kk.h inhale/en.h inhale/ru.h inhale/he.h inhale/fr.h inhale/es.h
 	$(CC) $(CFLAGS) -o $@ brodsky.c
 
 clean:

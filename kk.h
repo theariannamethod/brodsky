@@ -275,12 +275,17 @@ static void kk_prophecy_inject(void (*add_fn)(ProphecySystem*, int, float),
     KKDoc *doc = &kk.docs[kk.active];
     if (doc->n_heavy <= 0) return;
 
-    int pick = 0;
-    float r = rng_fn();
+    /* B-8: honest rank-weighted pick — weight 1/(1+i), heavier ranks lead and the
+     * MIDDLE is reachable. The old code threw r once against a shrinking threshold, so
+     * r>=0.3 (p=0.7) fell through to heavy[last] and r<0.3 (p=0.3) took heavy[0] — the
+     * whole middle of the ranking could never be whispered. */
+    float total = 0.0f;
+    for (int i = 0; i < doc->n_heavy; i++) total += 1.0f / (1.0f + (float)i);
+    float r = rng_fn() * total, cum = 0.0f;
+    int pick = doc->n_heavy - 1;
     for (int i = 0; i < doc->n_heavy; i++) {
-        float threshold = 1.0f / (1.0f + (float)i);
-        if (r < threshold * 0.3f) { pick = i; break; }
-        pick = i;
+        cum += 1.0f / (1.0f + (float)i);
+        if (cum >= r) { pick = i; break; }
     }
     add_fn(ps, doc->heavy[pick], 0.3f);
 }
