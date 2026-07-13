@@ -707,6 +707,7 @@ static int words_rhyme(int a, int b) {
 /* Fallback: do the last characters match? (weaker rhyme) */
 static int words_near_rhyme(int a, int b) {
     if (a < 0 || b < 0 || a == b) return 0;
+    if (vocab[a].lang != vocab[b].lang) return 0;   /* M-10: no cross-language byte-rhymes */
     const char *wa = vocab[a].text;
     const char *wb = vocab[b].text;
     int la = (int)strlen(wa);
@@ -1758,6 +1759,7 @@ static void cycle_reset(void) {
 /* ─── MARK WORD USED ────────────────────────────────────────────────── */
 
 static void mark_used(int idx) {
+    for (int i = 0; i < org.used_count; i++) if (org.used[i] == idx) return;  /* M-8: used[] is a set — no double entry */
     if (org.used_count < MAX_VOCAB)
         org.used[org.used_count++] = idx;
 }
@@ -4165,17 +4167,16 @@ static void repl(void) {
                 printf("  %s(no scars yet — write heavier poems)%s\n", ANSI_DIM, ANSI_RESET);
                 continue;
             }
-            /* show top 20 scarred words, sorted by weight */
+            /* show the top 20 scarred words by WEIGHT — M-6: scan the whole vocabulary,
+             * keeping a sorted top-K, instead of stopping at the first 20 by index. */
             int top[20]; float top_w[20];
             int nt = 0;
-            for (int i = 0; i < vocab_size && nt < 20; i++) {
+            for (int i = 0; i < vocab_size; i++) {
                 if (scar[i] < 0.01f) continue;
-                /* insert sorted */
-                int pos = nt;
-                for (int j = 0; j < nt; j++) {
-                    if (scar[i] > top_w[j]) { pos = j; break; }
-                }
-                for (int j = nt; j > pos; j--) { top[j] = top[j-1]; top_w[j] = top_w[j-1]; }
+                if (nt == 20 && scar[i] <= top_w[19]) continue;   /* not heavy enough for the top 20 */
+                int pos = (nt < 20) ? nt : 19;
+                while (pos > 0 && scar[i] > top_w[pos-1]) pos--;
+                for (int j = ((nt < 20) ? nt : 19); j > pos; j--) { top[j] = top[j-1]; top_w[j] = top_w[j-1]; }
                 top[pos] = i; top_w[pos] = scar[i];
                 if (nt < 20) nt++;
             }
