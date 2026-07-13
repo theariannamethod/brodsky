@@ -1083,11 +1083,14 @@ typedef struct {
 
 static CorpusBigrams corpus_bg;
 
+static unsigned g_corpus_ver = 1;   /* M-9: bumps on any bigram/hebbian change → the memo rows below invalidate */
+
 static void corpus_bg_init(void) {
     memset(&corpus_bg, 0, sizeof(corpus_bg));
 }
 
 static void corpus_bg_add(int src_id, int dst_id, float w) {
+    g_corpus_ver++;
     /* find existing */
     for (int i = 0; i < corpus_bg.count; i++) {
         if (corpus_bg.src[i] == src_id && corpus_bg.dst[i] == dst_id) {
@@ -1104,13 +1107,21 @@ static void corpus_bg_add(int src_id, int dst_id, float w) {
     }
 }
 
+/* M-9: score every candidate against last_word in O(1). last_word is fixed across a whole
+ * candidate pass, so build a dst->weight row for it once (invalidated on last_word change or
+ * any corpus mutation) instead of scanning all ~4096 bigrams per candidate. Same values. */
 static float corpus_bigram_score(int last_word, int cand_idx) {
-    if (last_word < 0) return 0.0f;
-    for (int i = 0; i < corpus_bg.count; i++) {
-        if (corpus_bg.src[i] == last_word && corpus_bg.dst[i] == cand_idx)
-            return corpus_bg.weight[i];
+    if (last_word < 0 || cand_idx < 0 || cand_idx >= MAX_VOCAB) return 0.0f;
+    static int cached_lw = -2; static unsigned cached_ver = 0;
+    static float row[MAX_VOCAB];
+    if (last_word != cached_lw || g_corpus_ver != cached_ver) {
+        memset(row, 0, sizeof(row));
+        for (int i = 0; i < corpus_bg.count; i++)
+            if (corpus_bg.src[i] == last_word && corpus_bg.dst[i] >= 0 && corpus_bg.dst[i] < MAX_VOCAB)
+                row[corpus_bg.dst[i]] = corpus_bg.weight[i];
+        cached_lw = last_word; cached_ver = g_corpus_ver;
     }
-    return 0.0f;
+    return row[cand_idx];
 }
 
 /* Find the strongest bigram target from a given word, or -1 if none */
@@ -1143,6 +1154,7 @@ static void corpus_hb_init(void) {
 }
 
 static void corpus_hb_add(int a, int b, float w) {
+    g_corpus_ver++;
     if (a == b) return;
     /* canonical order: a < b */
     if (a > b) { int t = a; a = b; b = t; }
@@ -1162,15 +1174,22 @@ static void corpus_hb_add(int a, int b, float w) {
     }
 }
 
+/* M-9: same O(1) memo as bigrams — a row over the symmetric hebbian table for last_word. */
 static float corpus_hebbian_score(int last_word, int cand_idx) {
-    if (last_word < 0) return 0.0f;
-    int a = last_word, b = cand_idx;
-    if (a > b) { int t = a; a = b; b = t; }
-    for (int i = 0; i < corpus_hb.count; i++) {
-        if (corpus_hb.word_a[i] == a && corpus_hb.word_b[i] == b)
-            return corpus_hb.weight[i];
+    if (last_word < 0 || cand_idx < 0 || cand_idx >= MAX_VOCAB) return 0.0f;
+    static int cached_lw = -2; static unsigned cached_ver = 0;
+    static float row[MAX_VOCAB];
+    if (last_word != cached_lw || g_corpus_ver != cached_ver) {
+        memset(row, 0, sizeof(row));
+        for (int i = 0; i < corpus_hb.count; i++) {
+            if (corpus_hb.word_a[i] == last_word && corpus_hb.word_b[i] >= 0 && corpus_hb.word_b[i] < MAX_VOCAB)
+                row[corpus_hb.word_b[i]] = corpus_hb.weight[i];
+            else if (corpus_hb.word_b[i] == last_word && corpus_hb.word_a[i] >= 0 && corpus_hb.word_a[i] < MAX_VOCAB)
+                row[corpus_hb.word_a[i]] = corpus_hb.weight[i];
+        }
+        cached_lw = last_word; cached_ver = g_corpus_ver;
     }
-    return 0.0f;
+    return row[cand_idx];
 }
 
 /* ─── CORPUS LOADING — parse exhale corpus into bigram & hebbian ───── */
