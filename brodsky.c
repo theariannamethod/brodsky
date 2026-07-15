@@ -1667,39 +1667,64 @@ static int is_word_byte(unsigned char c) {
     return 0;
 }
 
+/* exact match only (as the old inline ingest lookup did) — case-insensitive find_vocab_word
+ * would newly match capitalized entries and change dissonance; keep ingest byte-faithful. */
+static int find_exact(const char *w) {
+    for (int i = 0; i < vocab_size; i++)
+        if (strcmp(vocab[i].text, w) == 0) return i;
+    return -1;
+}
+
+static float g_last_diss = 0.0f;   /* M-2: last input's alienness → next fold's breath */
+
 static float ingest_prompt(const char *text) {
     /* detect language from input and set organism target */
     org.current_lang = detect_language(text);
 
-    /* Tokenize: find known words in input, measure dissonance */
-    char buf[128];
-    int bi = 0, n_words = 0, n_known = 0;
+    /* Tokenize into words. */
+    char toks[64][128];
+    int ntoks = 0;
+    {
+        int bi = 0;
+        for (const unsigned char *p = (const unsigned char *)text; ; p++) {
+            if (*p && is_word_byte(*p)) {
+                /* for ASCII, lowercase; for UTF-8 multibyte, copy as-is */
+                if (bi < 126) toks[ntoks][bi++] = (*p < 0x80) ? (char)tolower(*p) : (char)*p;
+            } else {
+                if (bi > 0) { toks[ntoks][bi] = '\0'; if (ntoks < 63) ntoks++; bi = 0; }
+                if (!*p) break;
+            }
+        }
+    }
+
+    /* M-2 (Oleg): MIXTURE perception. Adjacent tokens that form a multiword entry
+     * ("se souvenir", "reloj de arena") are folded into one HEARD unit with a probability
+     * that breathes with the body's agitation — a calm poet hears whole phrases, an
+     * agitated one hears only the fragments. Not always-fold, not never — a flow. The roll
+     * runs on the body RNG so --seed stays reproducible; BRODSKY_NO_FOLD forces the baseline. */
+    static int no_fold = -1;
+    if (no_fold < 0) no_fold = getenv("BRODSKY_NO_FOLD") ? 1 : 0;
+    /* the flow: how readily the poet catches a phrase breathes with how alien the LAST
+     * thing he heard was — settled after a familiar line he hears whole phrases; rattled
+     * after an alien one they shatter into words. */
+    float p_hear = no_fold ? 0.0f : clampf(0.70f - g_last_diss * 0.55f, 0.15f, 0.70f);
+
+    int n_words = 0, n_known = 0;
     int known_ids[64];
     int n_ids = 0;
-
-    for (const unsigned char *p = (const unsigned char *)text; ; p++) {
-        if (*p && is_word_byte(*p)) {
-            /* for ASCII, lowercase; for UTF-8 multibyte, copy as-is */
-            if (*p < 0x80) {
-                if (bi < 126) buf[bi++] = (char)tolower(*p);
-            } else {
-                if (bi < 126) buf[bi++] = (char)*p;
+    for (int t = 0; t < ntoks; t++) {
+        int id = -1;
+        if (t + 1 < ntoks) {                        /* try to hear the phrase as one unit */
+            char joined[258];
+            snprintf(joined, sizeof(joined), "%s %s", toks[t], toks[t + 1]);
+            int mid = find_exact(joined);
+            if (mid >= 0 && p_hear > 0.0f && rng_float() < p_hear) {
+                id = mid; t++;                       /* folded: heard "se souvenir" whole */
             }
-        } else {
-            if (bi > 0) {
-                buf[bi] = '\0';
-                n_words++;
-                for (int i = 0; i < vocab_size; i++) {
-                    if (strcmp(vocab[i].text, buf) == 0) {
-                        n_known++;
-                        if (n_ids < 64) known_ids[n_ids++] = i;
-                        break;
-                    }
-                }
-                bi = 0;
-            }
-            if (!*p) break;
         }
+        if (id < 0) id = find_exact(toks[t]);        /* heard just the word */
+        n_words++;
+        if (id >= 0) { n_known++; if (n_ids < 64) known_ids[n_ids++] = id; }
     }
 
     /* dissonance = how alien the input is */
@@ -1750,6 +1775,10 @@ static float ingest_prompt(const char *text) {
     if (dissonance > 0.7f)
         org.chambers.phase[CH_FEAR] += dissonance * 0.2f;
 
+    /* M-2: EMA of recent alienness. A single alien prompt lifts it; the poet's own
+     * coherent self-ingest (diss~0) settles it only partway, so recent dissonance
+     * lingers and the next breath's fold probability drifts instead of snapping. */
+    g_last_diss = 0.55f * g_last_diss + 0.45f * dissonance;
     return dissonance;
 }
 
@@ -3605,8 +3634,13 @@ static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
              * rest of the cycle into French. Keep current_lang stable (as the comment
              * always promised) by saving it around the self-ingest. */
             int saved_lang = org.current_lang;
+            /* M-2: the fold breath tracks how alien the WORLD has been. Reading his own
+             * coherent voice must not erase that — reflection is not hearing. Chambers /
+             * hebbian / julia still shift below; only the perceptual EMA is held. */
+            float saved_diss = g_last_diss;
             ingest_prompt(self_text);
             org.current_lang = saved_lang;
+            g_last_diss = saved_diss;
         }
 
         /* write to buffer for web mode */
