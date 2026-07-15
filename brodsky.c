@@ -50,13 +50,18 @@
 
 /* ─── CONSTANTS ─────────────────────────────────────────────────────── */
 
-#define MAX_VOCAB       4500
+#define MAX_VOCAB       5000    /* M-4: raw entries (~4517) exceeded the old 4500 cap, so the
+                                 * Spanish tail was silently truncated; give it room for all of it */
 #define MAX_LINE_WORDS  12
 #define MAX_HAIKU_WORDS 36
 #define DESTINY_DIM     8
 #define BIGRAM_SMOOTH   0.01f
 #define HEBBIAN_SLOTS   64
 #define TAU_BASE        1.2f
+#define TAU_COLD        0.40f   /* B-1 mixture: the committed voice (sharp — the word lands) */
+#define TAU_HOT         1.50f   /* B-1 mixture: the wandering voice (broad — the poet drifts) */
+
+static int g_user_seeded = 0;   /* B-3: --seed pins the life; the REPL must not reseed it */
 #define JULIA_STRETCH   2.0f
 #define WEB_PORT        3003
 #define MAX_CYCLE_HAIKU 7
@@ -370,7 +375,9 @@ static const char *fr_connectives[] = {
 };
 
 static const char *es_connectives[] = {
-    "sinembargo", "noobstante", "portanto",
+    /* M-4: valid single-token connectives — the old "sinembargo"/"noobstante"/"portanto"
+     * were run-together non-words (the real forms "sin embargo" etc. are multiword, M-2). */
+    "empero", "aunque", "mas",
     NULL
 };
 
@@ -485,10 +492,13 @@ static void load_raw_array(const RawWord *raw, int raw_count) {
         /* skip dead function words — Brodsky doesn't need articles */
         if (raw[r].mass < 0.10f) continue;
 
-        /* check for duplicate */
+        /* check for duplicate — B-5: within the SAME language only. cross-language
+         * homographs ("empire", "canal", "vector") are legal; the sampler already
+         * filters candidates by language, so a shared spelling must not let the senior
+         * language swallow the junior's word (and kill its native tension pairs). */
         int dup = 0;
         for (int i = 0; i < vocab_size; i++) {
-            if (strcmp(vocab[i].text, raw[r].text) == 0) { dup = 1; break; }
+            if (vocab[i].lang == raw[r].lang && strcmp(vocab[i].text, raw[r].text) == 0) { dup = 1; break; }
         }
         if (dup) continue;
 
@@ -700,6 +710,7 @@ static int words_rhyme(int a, int b) {
 /* Fallback: do the last characters match? (weaker rhyme) */
 static int words_near_rhyme(int a, int b) {
     if (a < 0 || b < 0 || a == b) return 0;
+    if (vocab[a].lang != vocab[b].lang) return 0;   /* M-10: no cross-language byte-rhymes */
     const char *wa = vocab[a].text;
     const char *wb = vocab[b].text;
     int la = (int)strlen(wa);
@@ -1018,13 +1029,38 @@ static void hebbian_record(int a, int b) {
             return;
         }
     }
-    /* add new */
+    /* add new — B-6: when the table is full, evict the weakest slot instead of dropping
+     * the newcomer, so the organ keeps learning past its first 64 pairs. */
     if (hebbian.count < HEBBIAN_SLOTS) {
         hebbian.word_a[hebbian.count] = a;
         hebbian.word_b[hebbian.count] = b;
         hebbian.strength[hebbian.count] = 0.1f;
         hebbian.count++;
+    } else {
+        /* full — evict the weakest slot so the newcomer can enter. decay makes stale
+         * pairs the weakest over time; reinforced pairs climb above the churn and survive. */
+        int weakest = 0;
+        for (int i = 1; i < HEBBIAN_SLOTS; i++)
+            if (hebbian.strength[i] < hebbian.strength[weakest]) weakest = i;
+        hebbian.word_a[weakest]   = a;
+        hebbian.word_b[weakest]   = b;
+        hebbian.strength[weakest] = 0.1f;
     }
+}
+
+/* B-6: decay every pair each cycle and forget the faded, so old associations don't
+ * hold the 64 slots forever — the organ stays alive instead of glazing after a flash. */
+static void hebbian_decay(void) {
+    int w = 0;
+    for (int i = 0; i < hebbian.count; i++) {
+        float s = hebbian.strength[i] * 0.995f;
+        if (s < 0.02f) continue;   /* faded below the floor — forget it, free the slot */
+        hebbian.word_a[w]   = hebbian.word_a[i];
+        hebbian.word_b[w]   = hebbian.word_b[i];
+        hebbian.strength[w] = s;
+        w++;
+    }
+    hebbian.count = w;
 }
 
 static float hebbian_score(int a, int b) {
@@ -1047,11 +1083,14 @@ typedef struct {
 
 static CorpusBigrams corpus_bg;
 
+static unsigned g_corpus_ver = 1;   /* M-9: bumps on any bigram/hebbian change → the memo rows below invalidate */
+
 static void corpus_bg_init(void) {
     memset(&corpus_bg, 0, sizeof(corpus_bg));
 }
 
 static void corpus_bg_add(int src_id, int dst_id, float w) {
+    g_corpus_ver++;
     /* find existing */
     for (int i = 0; i < corpus_bg.count; i++) {
         if (corpus_bg.src[i] == src_id && corpus_bg.dst[i] == dst_id) {
@@ -1068,13 +1107,21 @@ static void corpus_bg_add(int src_id, int dst_id, float w) {
     }
 }
 
+/* M-9: score every candidate against last_word in O(1). last_word is fixed across a whole
+ * candidate pass, so build a dst->weight row for it once (invalidated on last_word change or
+ * any corpus mutation) instead of scanning all ~4096 bigrams per candidate. Same values. */
 static float corpus_bigram_score(int last_word, int cand_idx) {
-    if (last_word < 0) return 0.0f;
-    for (int i = 0; i < corpus_bg.count; i++) {
-        if (corpus_bg.src[i] == last_word && corpus_bg.dst[i] == cand_idx)
-            return corpus_bg.weight[i];
+    if (last_word < 0 || cand_idx < 0 || cand_idx >= MAX_VOCAB) return 0.0f;
+    static int cached_lw = -2; static unsigned cached_ver = 0;
+    static float row[MAX_VOCAB];
+    if (last_word != cached_lw || g_corpus_ver != cached_ver) {
+        memset(row, 0, sizeof(row));
+        for (int i = 0; i < corpus_bg.count; i++)
+            if (corpus_bg.src[i] == last_word && corpus_bg.dst[i] >= 0 && corpus_bg.dst[i] < MAX_VOCAB)
+                row[corpus_bg.dst[i]] = corpus_bg.weight[i];
+        cached_lw = last_word; cached_ver = g_corpus_ver;
     }
-    return 0.0f;
+    return row[cand_idx];
 }
 
 /* Find the strongest bigram target from a given word, or -1 if none */
@@ -1107,6 +1154,7 @@ static void corpus_hb_init(void) {
 }
 
 static void corpus_hb_add(int a, int b, float w) {
+    g_corpus_ver++;
     if (a == b) return;
     /* canonical order: a < b */
     if (a > b) { int t = a; a = b; b = t; }
@@ -1126,15 +1174,22 @@ static void corpus_hb_add(int a, int b, float w) {
     }
 }
 
+/* M-9: same O(1) memo as bigrams — a row over the symmetric hebbian table for last_word. */
 static float corpus_hebbian_score(int last_word, int cand_idx) {
-    if (last_word < 0) return 0.0f;
-    int a = last_word, b = cand_idx;
-    if (a > b) { int t = a; a = b; b = t; }
-    for (int i = 0; i < corpus_hb.count; i++) {
-        if (corpus_hb.word_a[i] == a && corpus_hb.word_b[i] == b)
-            return corpus_hb.weight[i];
+    if (last_word < 0 || cand_idx < 0 || cand_idx >= MAX_VOCAB) return 0.0f;
+    static int cached_lw = -2; static unsigned cached_ver = 0;
+    static float row[MAX_VOCAB];
+    if (last_word != cached_lw || g_corpus_ver != cached_ver) {
+        memset(row, 0, sizeof(row));
+        for (int i = 0; i < corpus_hb.count; i++) {
+            if (corpus_hb.word_a[i] == last_word && corpus_hb.word_b[i] >= 0 && corpus_hb.word_b[i] < MAX_VOCAB)
+                row[corpus_hb.word_b[i]] = corpus_hb.weight[i];
+            else if (corpus_hb.word_b[i] == last_word && corpus_hb.word_a[i] >= 0 && corpus_hb.word_a[i] < MAX_VOCAB)
+                row[corpus_hb.word_a[i]] = corpus_hb.weight[i];
+        }
+        cached_lw = last_word; cached_ver = g_corpus_ver;
     }
-    return 0.0f;
+    return row[cand_idx];
 }
 
 /* ─── CORPUS LOADING — parse exhale corpus into bigram & hebbian ───── */
@@ -1587,12 +1642,9 @@ static void organism_init(void) {
     org.cal_diss = calendar_dissonance();
     org.season = current_season();
 
-    /* seed destiny from time */
-    unsigned s = (unsigned)time(NULL);
-    for (int i = 0; i < DESTINY_DIM; i++) {
-        s = s * 1103515245 + 12345;
-        org.destiny[i] = ((float)(s & 0xFFFF) / 65535.0f) * 2.0f - 1.0f;
-    }
+    /* seed destiny from the organism's RNG so --seed reproduces it (B-3) */
+    for (int i = 0; i < DESTINY_DIM; i++)
+        org.destiny[i] = rng_float() * 2.0f - 1.0f;
     vec_normalize(org.destiny, DESTINY_DIM);
 
     hebbian_init();
@@ -1615,39 +1667,64 @@ static int is_word_byte(unsigned char c) {
     return 0;
 }
 
+/* exact match only (as the old inline ingest lookup did) — case-insensitive find_vocab_word
+ * would newly match capitalized entries and change dissonance; keep ingest byte-faithful. */
+static int find_exact(const char *w) {
+    for (int i = 0; i < vocab_size; i++)
+        if (strcmp(vocab[i].text, w) == 0) return i;
+    return -1;
+}
+
+static float g_last_diss = 0.0f;   /* M-2: last input's alienness → next fold's breath */
+
 static float ingest_prompt(const char *text) {
     /* detect language from input and set organism target */
     org.current_lang = detect_language(text);
 
-    /* Tokenize: find known words in input, measure dissonance */
-    char buf[128];
-    int bi = 0, n_words = 0, n_known = 0;
+    /* Tokenize into words. */
+    char toks[64][128];
+    int ntoks = 0;
+    {
+        int bi = 0;
+        for (const unsigned char *p = (const unsigned char *)text; ; p++) {
+            if (*p && is_word_byte(*p)) {
+                /* for ASCII, lowercase; for UTF-8 multibyte, copy as-is */
+                if (bi < 126) toks[ntoks][bi++] = (*p < 0x80) ? (char)tolower(*p) : (char)*p;
+            } else {
+                if (bi > 0) { toks[ntoks][bi] = '\0'; if (ntoks < 63) ntoks++; bi = 0; }
+                if (!*p) break;
+            }
+        }
+    }
+
+    /* M-2 (Oleg): MIXTURE perception. Adjacent tokens that form a multiword entry
+     * ("se souvenir", "reloj de arena") are folded into one HEARD unit with a probability
+     * that breathes with the body's agitation — a calm poet hears whole phrases, an
+     * agitated one hears only the fragments. Not always-fold, not never — a flow. The roll
+     * runs on the body RNG so --seed stays reproducible; BRODSKY_NO_FOLD forces the baseline. */
+    static int no_fold = -1;
+    if (no_fold < 0) no_fold = getenv("BRODSKY_NO_FOLD") ? 1 : 0;
+    /* the flow: how readily the poet catches a phrase breathes with how alien the LAST
+     * thing he heard was — settled after a familiar line he hears whole phrases; rattled
+     * after an alien one they shatter into words. */
+    float p_hear = no_fold ? 0.0f : clampf(0.70f - g_last_diss * 0.55f, 0.15f, 0.70f);
+
+    int n_words = 0, n_known = 0;
     int known_ids[64];
     int n_ids = 0;
-
-    for (const unsigned char *p = (const unsigned char *)text; ; p++) {
-        if (*p && is_word_byte(*p)) {
-            /* for ASCII, lowercase; for UTF-8 multibyte, copy as-is */
-            if (*p < 0x80) {
-                if (bi < 126) buf[bi++] = (char)tolower(*p);
-            } else {
-                if (bi < 126) buf[bi++] = (char)*p;
+    for (int t = 0; t < ntoks; t++) {
+        int id = -1;
+        if (t + 1 < ntoks) {                        /* try to hear the phrase as one unit */
+            char joined[258];
+            snprintf(joined, sizeof(joined), "%s %s", toks[t], toks[t + 1]);
+            int mid = find_exact(joined);
+            if (mid >= 0 && p_hear > 0.0f && rng_float() < p_hear) {
+                id = mid; t++;                       /* folded: heard "se souvenir" whole */
             }
-        } else {
-            if (bi > 0) {
-                buf[bi] = '\0';
-                n_words++;
-                for (int i = 0; i < vocab_size; i++) {
-                    if (strcmp(vocab[i].text, buf) == 0) {
-                        n_known++;
-                        if (n_ids < 64) known_ids[n_ids++] = i;
-                        break;
-                    }
-                }
-                bi = 0;
-            }
-            if (!*p) break;
         }
+        if (id < 0) id = find_exact(toks[t]);        /* heard just the word */
+        n_words++;
+        if (id >= 0) { n_known++; if (n_ids < 64) known_ids[n_ids++] = id; }
     }
 
     /* dissonance = how alien the input is */
@@ -1684,6 +1761,7 @@ static float ingest_prompt(const char *text) {
             case EMO_RAGE: org.chambers.phase[CH_RAGE] += mass * 0.8f; break;
             case EMO_VOID: org.chambers.phase[CH_VOID] += mass * 0.8f; break;
             case EMO_RESONANCE: org.chambers.phase[CH_FLOW] += mass * 0.8f; break;
+            case EMO_JOY: org.chambers.phase[CH_FLOW] += mass * 0.8f; break;   /* M-3: joy → flow (kk.h:126-129) */
             case EMO_JULIA: org.julia += mass * 0.5f; break;
             case EMO_GRIEF: org.chambers.phase[CH_VOID] += mass * 0.5f;
                             org.chambers.phase[CH_FEAR] += mass * 0.3f; break;
@@ -1697,6 +1775,10 @@ static float ingest_prompt(const char *text) {
     if (dissonance > 0.7f)
         org.chambers.phase[CH_FEAR] += dissonance * 0.2f;
 
+    /* M-2: EMA of recent alienness. A single alien prompt lifts it; the poet's own
+     * coherent self-ingest (diss~0) settles it only partway, so recent dissonance
+     * lingers and the next breath's fold probability drifts instead of snapping. */
+    g_last_diss = 0.55f * g_last_diss + 0.45f * dissonance;
     return dissonance;
 }
 
@@ -1728,6 +1810,7 @@ static void cycle_reset(void) {
 /* ─── MARK WORD USED ────────────────────────────────────────────────── */
 
 static void mark_used(int idx) {
+    for (int i = 0; i < org.used_count; i++) if (org.used[i] == idx) return;  /* M-8: used[] is a set — no double entry */
     if (org.used_count < MAX_VOCAB)
         org.used[org.used_count++] = idx;
 }
@@ -2234,21 +2317,28 @@ static void parliament_update(int winner_word) {
 static void parliament_lifecycle(Parliament *p) {
     for (int i = 0; i < p->n; i++) {
         if (!p->e[i].alive) continue;
-        /* Mitosis: overloaded expert splits */
-        if (p->e[i].overload > 3.0f && p->n < DOE_EXPERTS * 2) {
-            int child = p->n++;
-            p->e[child] = p->e[i];
-            p->e[child].vitality *= 0.6f;
-            p->e[child].overload = 0.0f;
-            p->e[child].wins = 0;
-            p->e[i].vitality *= 0.6f;
-            p->e[i].overload = 0.0f;
-            /* mutate child slightly */
-            for (int e = 0; e < EMO_COUNT; e++)
-                p->e[child].bias[e] += (rng_float() - 0.5f) * 0.1f;
+        /* Mitosis / rebirth: an overloaded expert splits — B-7: into a DEAD slot if one
+         * is free (a dead expert reborn as a mutant), else a fresh slot. Presence accrues
+         * where the parliament regenerates instead of only ever shrinking. */
+        if (p->e[i].overload > 3.0f) {
+            int child = -1;
+            for (int d = 0; d < p->n; d++) if (!p->e[d].alive) { child = d; break; }
+            if (child < 0 && p->n < DOE_EXPERTS * 2) child = p->n++;
+            if (child >= 0) {
+                p->e[child] = p->e[i];
+                p->e[child].alive = 1;
+                p->e[child].vitality = clampf(p->e[i].vitality * 0.6f, 0.2f, 2.0f);
+                p->e[child].overload = 0.0f;
+                p->e[child].wins = 0;
+                p->e[i].vitality *= 0.6f;
+                p->e[i].overload = 0.0f;
+                for (int e = 0; e < EMO_COUNT; e++)
+                    p->e[child].bias[e] += (rng_float() - 0.5f) * 0.1f;
+            }
         }
-        /* Apoptosis: vitality too low */
-        if (p->e[i].vitality < 0.15f && p->n > 2) {
+        /* Apoptosis: vitality too low — B-7: count LIVING experts, not slots, so the
+         * democracy can never die out entirely (p->n grows with mitosis and never shrinks). */
+        if (p->e[i].vitality < 0.15f && parliament_alive_count(p) > 2) {
             p->e[i].alive = 0;
         }
     }
@@ -2515,7 +2605,7 @@ static int sample_word(int syl_remaining, int force_max_syl,
     /* rhyme: filter, not boost. A poet rhymes or breaks the rhyme.
      *
      * Strategy: when rhyme_target is set —
-     *   1. 25% chance: skip rhyme entirely (poet breaks his own pattern)
+     *   1. 8% chance: skip rhyme entirely (poet breaks his own pattern)
      *   2. Otherwise: FILTER to rhyming candidates only
      *   3. If no rhyming candidates survive the filter — free generation
      *
@@ -2546,17 +2636,36 @@ static int sample_word(int syl_remaining, int force_max_syl,
         /* if n_rhyme < 1: not enough options, generate freely (graceful fallback) */
     }
 
-    /* softmax with temperature */
-    float max_l = -1e30f;
-    for (int i = 0; i < n_cand; i++)
-        if (logits[i] > max_l) max_l = logits[i];
-
+    /* B-1: a MIXTURE of two voices, not one temperature (Oleg). The scores above are
+     * MULTIPLICATIVE weights (a ×0.001 mass penalty, a 0.0 rhyme-kill); the old code
+     * fed them into expf((score-max)/tau) as if they were additive logits, turning
+     * "1000× rarer" into ~5× and "never" into ~exp(-max/tau). Instead, every word blends
+     * a COMMITTED draw (cold tau, sharp — the telling word lands) and a WANDERING draw
+     * (hot tau, broad — the poet drifts). Each regime is score^(1/tau) normalized, so a
+     * 0.0 is never and a ×0.001 is ~1000× rarer in BOTH. Both voices are always present;
+     * their ratio breathes with the body's tau (org.tau low → more commitment). */
+    float inv_cold = 1.0f / TAU_COLD, inv_hot = 1.0f / TAU_HOT;
+    float a_cold = 0.5f + (TAU_BASE - org.tau) * 0.4f;   /* centred (0.5 at base τ), breathes with the body */
+    if (a_cold < 0.15f) a_cold = 0.15f;   /* never all-hot: keep a spine */
+    if (a_cold > 0.85f) a_cold = 0.85f;   /* never all-cold: keep a breath */
+    double zc = 0.0, zh = 0.0;
+    for (int i = 0; i < n_cand; i++) {
+        float s = logits[i];
+        if (s > 0.0f) { zc += powf(s, inv_cold); zh += powf(s, inv_hot); }
+    }
+    if (zc < 1e-30) zc = 1.0;
+    if (zh < 1e-30) zh = 1.0;
     float sum = 0.0f;
     for (int i = 0; i < n_cand; i++) {
-        logits[i] = expf((logits[i] - max_l) / org.tau);
-        sum += logits[i];
+        float s = logits[i];
+        float w = s > 0.0f ? (float)(a_cold * (powf(s, inv_cold) / zc) + (1.0 - a_cold) * (powf(s, inv_hot) / zh)) : 0.0f;
+        logits[i] = w;
+        sum += w;
     }
-    if (sum < 1e-10f) sum = 1e-10f;
+    if (sum < 1e-10f) {                    /* every candidate killed → uniform fallback */
+        for (int i = 0; i < n_cand; i++) logits[i] = 1.0f;
+        sum = (float)n_cand;
+    }
 
     /* sample */
     float r = rng_float() * sum;
@@ -2904,11 +3013,21 @@ typedef struct {
  * punctuate_line: compute punctuation marks for each word in a line.
  * marks[] must have at least line->count elements.
  */
+/* M-1: punctuation derived from the LINE'S CONTENT (a local xorshift seeded by the word
+ * indices), not the global RNG — so the same haiku is punctuated identically every render
+ * (terminal print, self-ingest, web) and rendering never perturbs the generation stream. */
+static float punct_rand(unsigned *s) {
+    *s ^= *s << 13; *s ^= *s >> 17; *s ^= *s << 5;
+    return (float)(*s & 0xFFFFFFu) / (float)0x1000000;
+}
 static void punctuate_line(const Line *line, PunctMark *marks) {
     int n = line->count;
     if (n == 0) return;
 
     int lang = line_primary_lang(line);
+    unsigned ph = 2166136261u;
+    for (int i = 0; i < n; i++) ph = (ph ^ (unsigned)(line->words[i] + 1)) * 16777619u;
+    if (ph == 0) ph = 1;
 
     /* Initialize all marks to empty */
     for (int i = 0; i < n; i++) {
@@ -2935,7 +3054,7 @@ static void punctuate_line(const Line *line, PunctMark *marks) {
         }
 
         /* 25% chance: skip punctuation for this word (probabilistic rhythm) */
-        int skip_punct = (rng_float() < 0.25f);
+        int skip_punct = (punct_rand(&ph) < 0.25f);
 
         if (skip_punct) {
             /* Still capitalize if after period */
@@ -2976,7 +3095,7 @@ static void punctuate_line(const Line *line, PunctMark *marks) {
                 /* Check for exclamation: mass > 0.80 AND emotion TRAUMA or RAGE → 10% chance */
                 if (vocab[idx].mass > 0.80f &&
                     (vocab[idx].emotion == EMO_TRAUMA || vocab[idx].emotion == EMO_RAGE) &&
-                    rng_float() < 0.10f) {
+                    punct_rand(&ph) < 0.10f) {
                     marks[i].post_punct = "!";
                 } else {
                     marks[i].post_punct = ".";
@@ -2990,7 +3109,7 @@ static void punctuate_line(const Line *line, PunctMark *marks) {
                 /* Verb + noun/adjective/other → period after verb */
                 if (vocab[idx].mass > 0.80f &&
                     (vocab[idx].emotion == EMO_TRAUMA || vocab[idx].emotion == EMO_RAGE) &&
-                    rng_float() < 0.10f) {
+                    punct_rand(&ph) < 0.10f) {
                     marks[i].post_punct = "!";
                 } else {
                     marks[i].post_punct = ".";
@@ -3052,7 +3171,7 @@ static void punctuate_line(const Line *line, PunctMark *marks) {
             /* Check for exclamation */
             if (vocab[idx].mass > 0.80f &&
                 (vocab[idx].emotion == EMO_TRAUMA || vocab[idx].emotion == EMO_RAGE) &&
-                rng_float() < 0.10f) {
+                punct_rand(&ph) < 0.10f) {
                 marks[i].post_punct = "!";
             } else {
                 marks[i].post_punct = ".";
@@ -3434,6 +3553,7 @@ static int coda_to_string(const Coda *coda, char *buf, int bufsize) {
 static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
     cycle_reset();
     org.total_cycles++;
+    hebbian_decay();   /* B-6: age the associations each cycle so the organ keeps learning */
     int out_pos = 0;
 
     /* Memory Sea: decay all existing memories */
@@ -3509,10 +3629,18 @@ static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
         {
             char self_text[512];
             haiku_to_string(&h, self_text, (int)sizeof(self_text));
+            /* B-4: the meta-ingest shifts chambers / hebbian / julia, but the CYCLE's
+             * language answers the human — one diacritic ghost word must not hijack the
+             * rest of the cycle into French. Keep current_lang stable (as the comment
+             * always promised) by saving it around the self-ingest. */
+            int saved_lang = org.current_lang;
+            /* M-2: the fold breath tracks how alien the WORLD has been. Reading his own
+             * coherent voice must not erase that — reflection is not hearing. Chambers /
+             * hebbian / julia still shift below; only the perceptual EMA is held. */
+            float saved_diss = g_last_diss;
             ingest_prompt(self_text);
-            /* the ingest modifies: chambers, hebbian, julia, current_lang.
-             * but we keep current_lang stable within a cycle. */
-            org.current_lang = detect_language(self_text);
+            org.current_lang = saved_lang;
+            g_last_diss = saved_diss;
         }
 
         /* write to buffer for web mode */
@@ -3587,7 +3715,7 @@ static int generate_cycle(int cycle_num, char *out_buf, int out_bufsize) {
 /* ─── SPORE: PERSISTENCE ──────────────────────────────────────────── */
 
 #define SPORE_MAGIC   0x42524F44  /* "BROD" */
-#define SPORE_VERSION 4          /* v4: Memory Sea + poetic scars */
+#define SPORE_VERSION 5          /* v5: online Hebbian profile (B-6) */
 #define SPORE_PATH    "brodsky.spore"
 
 static int tension_pair_count(void) {
@@ -3677,6 +3805,12 @@ static void spore_save(const char *path) {
     /* Poetic scars (v4) */
     fwrite(&vocab_size, sizeof(int), 1, f);
     fwrite(scar, sizeof(float), (size_t)vocab_size, f);
+
+    /* online Hebbian profile (v5, B-6) — the associations the poet learned this life */
+    fwrite(&hebbian.count,   sizeof(int),   1, f);
+    fwrite(hebbian.word_a,   sizeof(int),   (size_t)hebbian.count, f);
+    fwrite(hebbian.word_b,   sizeof(int),   (size_t)hebbian.count, f);
+    fwrite(hebbian.strength, sizeof(float), (size_t)hebbian.count, f);
 
     fclose(f);
 }
@@ -3807,14 +3941,25 @@ static void spore_load(const char *path) {
         }
     }
 
+    /* online Hebbian profile (v5+, B-6) — restore what the poet learned last life */
+    if (version >= 5) {
+        int hc = 0;
+        if (fread(&hc, sizeof(int), 1, f) == 1 && hc >= 0 && hc <= HEBBIAN_SLOTS) {
+            hebbian.count = hc;
+            if (fread(hebbian.word_a,   sizeof(int),   (size_t)hc, f) != (size_t)hc) hebbian.count = 0;
+            if (fread(hebbian.word_b,   sizeof(int),   (size_t)hc, f) != (size_t)hc) hebbian.count = 0;
+            if (fread(hebbian.strength, sizeof(float), (size_t)hc, f) != (size_t)hc) hebbian.count = 0;
+        }
+    }
+
     fclose(f);
-    printf("[brodsky] spore loaded: %s\n", path);
+    printf("[brodsky] spore loaded: %s (hebbian: %d)\n", path, hebbian.count);
 }
 
 /* Signal handler: save spore on Ctrl+C */
 static void on_exit_signal(int sig) {
     (void)sig;
-    spore_save(SPORE_PATH);
+    if (!g_user_seeded) spore_save(SPORE_PATH);
     printf("\n[brodsky] spore saved.\n");
     exit(0);
 }
@@ -3878,7 +4023,7 @@ static void repl(void) {
 
         if (!fgets(input, (int)sizeof(input), stdin)) {
             /* EOF — save spore before exiting */
-            spore_save(SPORE_PATH);
+            if (!g_user_seeded) spore_save(SPORE_PATH);
             printf("\n[brodsky] spore saved.\n");
             break;
         }
@@ -3891,14 +4036,14 @@ static void repl(void) {
         if (len == 0) {
             /* empty enter = generate one cycle */
             cycle_num++;
-            rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+            if (!g_user_seeded) rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
             generate_cycle(cycle_num, NULL, 0);
             continue;
         }
 
         if (strcmp(input, "q") == 0 || strcmp(input, "quit") == 0 ||
             strcmp(input, "exit") == 0) {
-            spore_save(SPORE_PATH);
+            if (!g_user_seeded) spore_save(SPORE_PATH);
             printf("\n  %s[brodsky] spore saved.%s\n", ANSI_DIM, ANSI_RESET);
             printf("\n  %s\"what gets left of a man amounts to a part.%s\n",
                    ANSI_DIM, ANSI_RESET);
@@ -4078,17 +4223,16 @@ static void repl(void) {
                 printf("  %s(no scars yet — write heavier poems)%s\n", ANSI_DIM, ANSI_RESET);
                 continue;
             }
-            /* show top 20 scarred words, sorted by weight */
+            /* show the top 20 scarred words by WEIGHT — M-6: scan the whole vocabulary,
+             * keeping a sorted top-K, instead of stopping at the first 20 by index. */
             int top[20]; float top_w[20];
             int nt = 0;
-            for (int i = 0; i < vocab_size && nt < 20; i++) {
+            for (int i = 0; i < vocab_size; i++) {
                 if (scar[i] < 0.01f) continue;
-                /* insert sorted */
-                int pos = nt;
-                for (int j = 0; j < nt; j++) {
-                    if (scar[i] > top_w[j]) { pos = j; break; }
-                }
-                for (int j = nt; j > pos; j--) { top[j] = top[j-1]; top_w[j] = top_w[j-1]; }
+                if (nt == 20 && scar[i] <= top_w[19]) continue;   /* not heavy enough for the top 20 */
+                int pos = (nt < 20) ? nt : 19;
+                while (pos > 0 && scar[i] > top_w[pos-1]) pos--;
+                for (int j = ((nt < 20) ? nt : 19); j > pos; j--) { top[j] = top[j-1]; top_w[j] = top_w[j-1]; }
                 top[pos] = i; top_w[pos] = scar[i];
                 if (nt < 20) nt++;
             }
@@ -4170,7 +4314,7 @@ static void repl(void) {
         if (n > 0 && n <= 100) {
             for (int i = 0; i < n; i++) {
                 cycle_num++;
-                rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+                if (!g_user_seeded) rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
                 generate_cycle(cycle_num, NULL, 0);
             }
             continue;
@@ -4220,90 +4364,8 @@ static const char *html_template_tail =
     "<a href='/'>generate again</a>"
     "</div></body></html>";
 
-static const char *emo_class[EMO_COUNT] = {
-    "trauma", "joy", "grief", "resonance",
-    "desire", "void", "rage", "tenderness", "julia"
-};
 
 /* HTML-escape a string (minimal: &, <, >) into buf, return bytes written */
-static int html_escape(const char *src, char *dst, int dstsize) {
-    int pos = 0;
-    for (const char *p = src; *p && pos < dstsize - 6; p++) {
-        if (*p == '&') { memcpy(dst + pos, "&amp;", 5); pos += 5; }
-        else if (*p == '<') { memcpy(dst + pos, "&lt;", 4); pos += 4; }
-        else if (*p == '>') { memcpy(dst + pos, "&gt;", 4); pos += 4; }
-        else dst[pos++] = *p;
-    }
-    if (pos < dstsize) dst[pos] = '\0';
-    return pos;
-}
-
-static int haiku_to_html(const Haiku *h, char *buf, int bufsize) {
-    int pos = 0;
-    /* Detect rhyming end words for visual marking */
-    int end0 = (h->lines[0].count > 0) ? h->lines[0].words[h->lines[0].count - 1] : -1;
-    int end2 = (h->lines[2].count > 0) ? h->lines[2].words[h->lines[2].count - 1] : -1;
-    int has_rhyme = (end0 >= 0 && end2 >= 0 && words_rhyme(end0, end2));
-
-    pos += snprintf(buf + pos, (size_t)(bufsize - pos), "<div class='haiku'>");
-    for (int ln = 0; ln < 3; ln++) {
-        const Line *line = &h->lines[ln];
-        PunctMark marks[MAX_LINE_WORDS];
-        memset(marks, 0, sizeof(marks));
-        punctuate_line(line, marks);
-
-        pos += snprintf(buf + pos, (size_t)(bufsize - pos), "<span class='line'>");
-        for (int w = 0; w < line->count; w++) {
-            int idx = line->words[w];
-            int emo = vocab[idx].emotion;
-
-            /* Pre-punctuation (plain text, not colored) */
-            if (marks[w].pre_punct[0] != '\0') {
-                char esc[64];
-                html_escape(marks[w].pre_punct, esc, (int)sizeof(esc));
-                pos += snprintf(buf + pos, (size_t)(bufsize - pos), "%s", esc);
-            } else if (w > 0) {
-                pos += snprintf(buf + pos, (size_t)(bufsize - pos), " ");
-            }
-
-            /* Word text (possibly capitalized) */
-            char display[128];
-            if (marks[w].capitalize && !marks[w].ghost) {
-                capitalize_word(vocab[idx].text, display, (int)sizeof(display));
-            } else {
-                int tlen = (int)strlen(vocab[idx].text);
-                if (tlen > (int)sizeof(display) - 1) tlen = (int)sizeof(display) - 1;
-                memcpy(display, vocab[idx].text, (size_t)tlen);
-                display[tlen] = '\0';
-            }
-
-            /* Mark last word of lines 1 and 3 if they rhyme */
-            int is_rhyme_end = (has_rhyme && w == line->count - 1 && (ln == 0 || ln == 2));
-            char esc_word[256];
-            html_escape(display, esc_word, (int)sizeof(esc_word));
-            pos += snprintf(buf + pos, (size_t)(bufsize - pos),
-                           "<span class='%s%s'>%s</span>",
-                           emo_class[emo],
-                           is_rhyme_end ? " rhyme" : "",
-                           esc_word);
-
-            /* Post-punctuation (plain text) */
-            if (marks[w].post_punct[0] != '\0') {
-                char esc[16];
-                html_escape(marks[w].post_punct, esc, (int)sizeof(esc));
-                pos += snprintf(buf + pos, (size_t)(bufsize - pos), "%s", esc);
-            }
-        }
-        if (ln == 2 && h->has_enjamb) {
-            pos += snprintf(buf + pos, (size_t)(bufsize - pos),
-                           " <span class='dash'>&mdash;</span>");
-        }
-        pos += snprintf(buf + pos, (size_t)(bufsize - pos), "</span>");
-    }
-    pos += snprintf(buf + pos, (size_t)(bufsize - pos), "</div>");
-    return pos;
-}
-
 static void web_serve(void) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) { perror("socket"); return; }
@@ -4353,51 +4415,45 @@ static void web_serve(void) {
             continue;
         }
 
-        /* generate a cycle */
+        /* B-2: run the SAME full cycle the terminal runs — coda, memory sea, scars,
+         * meta-recursion and total_cycles++ — via generate_cycle, instead of the old
+         * hand-rolled haiku-only loop that skipped all of it. */
         cycle_num++;
-        rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
-        cycle_reset();
+        if (!g_user_seeded) rng_seed((unsigned long)time(NULL) ^ (unsigned long)cycle_num * 6364136223846793005ULL);
+
+        char poem[8192];
+        generate_cycle(cycle_num, poem, (int)sizeof(poem));
+
+        printf("[web] cycle %d: %d haiku, mass %.1f, julia %.2f, total_cycles %ld\n",
+               cycle_num, org.haiku_in_cycle, org.acc_mass, org.julia, (long)org.total_cycles);
 
         char response[16384];
         int rpos = 0;
-
-        /* head */
         int hlen = (int)strlen(html_template_head);
         memcpy(response + rpos, html_template_head, (size_t)hlen);
         rpos += hlen;
 
-        /* cycle info */
-        rpos += snprintf(response + rpos, (size_t)(sizeof(response) - (size_t)rpos),
-                        "<div class='meta'>cycle %d &middot; %s &middot; "
-                        "planet %.2f &middot; julia %.2f</div>",
-                        cycle_num, season_names[org.season],
-                        org.planet_diss, org.julia);
+        /* cycle info — M-5: snprintf return is clamped, never advances rpos past the buffer */
+        int m = snprintf(response + rpos, sizeof(response) - (size_t)rpos,
+                        "<div class='meta'>cycle %d &middot; %s &middot; planet %.2f &middot; "
+                        "julia %.2f</div><pre class='poem'>",
+                        cycle_num, season_names[org.season], org.planet_diss, org.julia);
+        if (m > 0 && rpos + m < (int)sizeof(response)) rpos += m;
 
-        /* generate haiku */
-        do {
-            org.haiku_in_cycle++;
-
-            Haiku h;
-            memset(&h, 0, sizeof(h));
-            generate_haiku(&h);
-
-            rpos += haiku_to_html(&h, response + rpos,
-                                  (int)(sizeof(response) - (size_t)rpos));
-
-            if (should_stop_cycle()) break;
-            inter_haiku_update();
-        } while (1);
-
-        /* also print to terminal */
-        printf("[web] cycle %d: %d haiku, mass %.1f, julia %.2f\n",
-               cycle_num, org.haiku_in_cycle, org.acc_mass, org.julia);
-
-        /* tail */
-        int tlen = (int)strlen(html_template_tail);
-        if (rpos + tlen < (int)sizeof(response)) {
-            memcpy(response + rpos, html_template_tail, (size_t)tlen);
-            rpos += tlen;
+        /* the full poem (haiku + coda), HTML-escaped into a <pre> */
+        for (int i = 0; poem[i] && rpos < (int)sizeof(response) - 16; i++) {
+            char c = poem[i];
+            if (c == '<')      { memcpy(response + rpos, "&lt;", 4);  rpos += 4; }
+            else if (c == '>') { memcpy(response + rpos, "&gt;", 4);  rpos += 4; }
+            else if (c == '&') { memcpy(response + rpos, "&amp;", 5); rpos += 5; }
+            else               { response[rpos++] = c; }
         }
+        const char *pre_close = "</pre>";
+        int pclen = (int)strlen(pre_close);
+        if (rpos + pclen < (int)sizeof(response)) { memcpy(response + rpos, pre_close, (size_t)pclen); rpos += pclen; }
+
+        int tlen = (int)strlen(html_template_tail);
+        if (rpos + tlen < (int)sizeof(response)) { memcpy(response + rpos, html_template_tail, (size_t)tlen); rpos += tlen; }
 
         write(client_fd, response, (size_t)rpos);
         close(client_fd);
@@ -4408,29 +4464,58 @@ static void web_serve(void) {
 
 /* ─── MAIN ──────────────────────────────────────────────────────────── */
 
+/* B-5 repro: every tension pair's two words must live in vocab WITH the pair's own
+ * language. Before the dedup fix, cross-language homographs were swallowed by the
+ * senior language and the junior pairs went dead. `make test-tensions` runs this. */
+static int vocab_has(const char *text, int lang) {
+    for (int i = 0; i < vocab_size; i++)
+        if (vocab[i].lang == lang && strcmp(vocab[i].text, text) == 0) return 1;
+    return 0;
+}
+static int test_tensions(void) {
+    int n = 0, fails = 0;
+    for (int i = 0; tensions[i].a != NULL; i++) {   /* sentinel-terminated {NULL,...} */
+        n++;
+        int ha = vocab_has(tensions[i].a, tensions[i].lang);
+        int hb = vocab_has(tensions[i].b, tensions[i].lang);
+        if (!ha || !hb) {
+            fails++;
+            fprintf(stderr, "[FAIL] %s {%s%s, %s%s}\n", lang_names[tensions[i].lang],
+                    tensions[i].a, ha ? "" : "<missing>", tensions[i].b, hb ? "" : "<missing>");
+        }
+    }
+    fprintf(stderr, "test-tensions: %d pairs, %d failures\n", n, fails);
+    return fails;
+}
+
 int main(int argc, char **argv) {
-    rng_seed((unsigned long)time(NULL));
+    /* B-3: parse args BEFORE seeding and init, so --seed reproduces chambers & destiny */
+    int web_mode = 0, test_mode = 0;
+    unsigned long seed = (unsigned long)time(NULL);
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--web") == 0) web_mode = 1;
+        else if (strcmp(argv[i], "--test-tensions") == 0) test_mode = 1;
+        else if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
+            seed = strtoul(argv[++i], NULL, 10);
+            g_user_seeded = 1;
+        }
+    }
+    rng_seed(seed);
     load_vocabulary();
+    if (test_mode) return test_tensions() ? 1 : 0;
     build_rhyme_table();
     load_all_corpora();
     kk_load();
     organism_init();
 
-    /* load spore (persistence) after init — merges saved state */
-    spore_load(SPORE_PATH);
+    /* load spore (persistence) after init — merges saved state.
+     * B-3: a pinned --seed is a clean reproducible life; it neither loads nor saves. */
+    if (!g_user_seeded) spore_load(SPORE_PATH);
 
     /* install signal handler for clean exit */
 #if defined(__unix__) || defined(__APPLE__)
     signal(SIGINT, on_exit_signal);
 #endif
-
-    int web_mode = 0;
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--web") == 0) web_mode = 1;
-        else if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
-            rng_seed(strtoul(argv[++i], NULL, 10));
-        }
-    }
 
 #if defined(__unix__) || defined(__APPLE__)
     if (web_mode) {
